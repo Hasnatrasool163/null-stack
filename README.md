@@ -130,23 +130,6 @@ Automated check against the answer key: `npm run verify` (prints PASS/FAIL per t
 npm run db:reset-work
 ```
 
-## Deployment Details
-- Deployment status: TODO - local only so far
-- Frontend host: TODO
-- Backend host: same Next.js app (route handlers run on the same host)
-- Database: PostgreSQL on Aiven (managed, TLS)
-- Deployed branch/commit: TODO
-
-### How We Deployed
-TODO when deployed. The intended path (one Next.js app, e.g. on Vercel):
-1. Build command `npm run build`, start command `npm start` (Vercel detects Next.js automatically).
-2. No separate backend service: API routes are part of the same app (Node.js runtime).
-3. Use the Aiven PostgreSQL service URL as `DATABASE_URL`; `sslmode` is stripped and TLS is enabled automatically for non-local hosts.
-4. Set `DATABASE_URL`, `SESSION_SECRET`, `LLM_PROVIDER_ORDER` and the AI key/model variables in the host's environment settings.
-5. Run `npm run db:setup` and `npm run db:seed` once against the hosted database (from a machine with `.env.local` pointing at it). Migrations also apply automatically on first request.
-6. No frontend API URL or CORS configuration is needed (same origin).
-7. Judges log in with the demo accounts above; the AI works with the keys configured on the host.
-
 ## Submission Summary
 - Source repository: https://github.com/Hasnatrasool163/null-stack
 - Live link or local demo video: TODO
