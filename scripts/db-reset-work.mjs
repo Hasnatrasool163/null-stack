@@ -1,4 +1,9 @@
 import { connect } from "./_db.mjs";
+import { getPool, migrate } from "../src/lib/db.ts";
+
+// Make sure every table below exists before clearing it.
+await migrate();
+await getPool().end();
 
 const client = connect();
 await client.connect();
