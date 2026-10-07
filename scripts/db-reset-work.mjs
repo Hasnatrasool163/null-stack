@@ -4,6 +4,8 @@ const client = connect();
 await client.connect();
 try {
   await client.query("BEGIN");
+  await client.query("DELETE FROM task_comments");
+  await client.query("DELETE FROM meetings");
   await client.query("DELETE FROM tasks");
   await client.query("DELETE FROM projects");
   await client.query("COMMIT");

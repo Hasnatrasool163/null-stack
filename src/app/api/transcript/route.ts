@@ -41,7 +41,12 @@ export async function POST(req: Request) {
   const result = await createFromTranscript(user, parsed.data.transcript);
   if (result.ok) return NextResponse.json(result);
   return NextResponse.json(
-    { ok: false, errors: result.errors },
+    {
+      ok: false,
+      reason: result.reason,
+      errors: result.errors,
+      insights: result.insights,
+    },
     { status: result.status },
   );
 }
