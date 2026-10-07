@@ -27,7 +27,21 @@ export type Project = {
   deadline: string;
   /** Number of tasks this particular user is allowed to see. */
   taskCount: number;
+  /** Admin, or the project's own manager: may edit/delete the project and its tasks. */
+  canEdit: boolean;
+  /** Admin only: may hand the project to another manager. */
+  canReassign: boolean;
 };
+
+export const TASK_STATUSES = [
+  "TODO",
+  "IN_PROGRESS",
+  "IN_REVIEW",
+  "DONE",
+] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export type TaskLink = { label: string; url: string };
 
 export type Task = {
   id: string;
@@ -39,9 +53,40 @@ export type Task = {
   /** YYYY-MM-DD */
   deadline: string;
   estimatedHours: number;
+  status: TaskStatus;
+  /** ISO timestamp */
+  createdAt: string;
+  /** ISO timestamp */
+  updatedAt: string;
+  reportedByName: string | null;
+  updatedByName: string | null;
+  links: TaskLink[];
+  commentCount: number;
 };
 
-export type ProjectDetail = { project: Project; tasks: Task[] };
+/** A task on the Kanban board, with project context and what this user may do. */
+export type BoardTask = Task & {
+  projectName: string;
+  managerId: string;
+  managerName: string;
+  /** Can edit title, description, assignee, deadline, hours. */
+  canEdit: boolean;
+  /** Can move status, add links and comment. */
+  canUpdate: boolean;
+};
+
+export type TaskComment = {
+  id: string;
+  taskId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: Role;
+  body: string;
+  /** ISO timestamp */
+  createdAt: string;
+};
+
+export type ProjectDetail = { project: Project; tasks: BoardTask[] };
 
 /** A task shown on /my-tasks, with its project context. */
 export type MyTask = Task & {
@@ -51,8 +96,89 @@ export type MyTask = Task & {
 
 export type DraftError = { where: string; message: string };
 
-export type CreatedProject = { id: string; name: string; taskCount: number };
+export type CreatedTask = {
+  title: string;
+  description: string;
+  assigneeName: string;
+  deadline: string;
+  estimatedHours: number;
+};
+
+export type CreatedProject = {
+  id: string;
+  name: string;
+  taskCount: number;
+  clientName: string;
+  managerName: string;
+  deadline: string;
+  tasks: CreatedTask[];
+};
+
+export type AgendaKind =
+  "OPEN_QUESTION" | "UNRESOLVED" | "FOLLOW_UP" | "RISK" | "DECISION";
+
+export type AgendaItem = {
+  topic: string;
+  reason: string;
+  kind: AgendaKind;
+  suggestedOwner: string | null;
+};
+
+/** What the AI learned about the meeting, shown even when nothing was saved. */
+export type MeetingInsights = {
+  title: string;
+  category: string;
+  summary: string;
+  openQuestions: string[];
+  agenda: AgendaItem[];
+};
+
+export type MeetingOutcome = "SAVED" | "NOT_RELEVANT" | "INVALID" | "REPLACED";
+
+export type Meeting = MeetingInsights & {
+  id: string;
+  createdAt: string;
+  createdByName: string;
+  saved: boolean;
+  projectIds: string[];
+};
+
+/** One row of the transcript history (every analysis, saved or not). */
+export type MeetingHistoryItem = Meeting & {
+  outcome: MeetingOutcome;
+  sourceName: string | null;
+  charCount: number;
+  /** Projects from this run that still exist. */
+  liveProjectCount: number;
+};
+
+export type MeetingDetail = MeetingHistoryItem & {
+  transcript: string;
+  errors: DraftError[];
+  projects: { id: string; name: string; taskCount: number }[];
+};
+
+/** An earlier analysis of the same transcript, offered for replace / keep both. */
+export type DuplicateMeeting = {
+  meetingId: string;
+  title: string;
+  createdAt: string;
+  createdByName: string;
+  /** Projects it created that still exist. */
+  projects: { id: string; name: string; taskCount: number }[];
+};
 
 export type TranscriptResult =
-  | { ok: true; projects: CreatedProject[] }
-  | { ok: false; errors: DraftError[] };
+  | {
+      ok: true;
+      projects: CreatedProject[];
+      insights: MeetingInsights;
+      meetingId: string;
+    }
+  | {
+      ok: false;
+      reason: "NOT_RELEVANT" | "INVALID" | "ERROR" | "DUPLICATE";
+      errors: DraftError[];
+      insights?: MeetingInsights;
+      duplicate?: DuplicateMeeting;
+    };

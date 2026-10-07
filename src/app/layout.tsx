@@ -3,10 +3,12 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { THEME_SCRIPT } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "NovaWorks CRM",
-  description: "Meeting transcripts to projects and tasks, with role-based views.",
+  title: "NullToPlan",
+  description:
+    "From meeting transcript to project plan: AI-generated projects, tasks and next-meeting agendas.",
 };
 
 export default function RootLayout({
@@ -18,7 +20,11 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-screen">
         <Providers>{children}</Providers>
       </body>

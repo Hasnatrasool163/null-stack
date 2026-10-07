@@ -1,35 +1,155 @@
 import type { Metadata } from "next";
-import { ProjectCard } from "@/components/project-card";
-import { Card, CardContent } from "@/components/ui/card";
-import { getProjects } from "@/lib/access";
+import Link from "next/link";
+import {
+  CalendarDays,
+  Clock3,
+  FolderKanban,
+  ListChecks,
+  Sparkles,
+} from "lucide-react";
+import {
+  NextAgenda,
+  UpcomingDeadlines,
+  Workload,
+} from "@/components/dashboard-panels";
+import type { ProjectSummary } from "@/components/project-card";
+import { ProjectGrid } from "@/components/project-grid";
+import { StatCard } from "@/components/stat-card";
+import { Button } from "@/components/ui/button";
+import { EmptyState, PageHeader } from "@/components/ui/misc";
+import { getMeetings, getProjects, getVisibleTasks } from "@/lib/access";
+import { daysUntil, formatDate, relativeDue, todayYmd } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Projects | NovaWorks" };
+export const metadata: Metadata = { title: "Projects | NullToPlan" };
 
 const EMPTY: Record<string, string> = {
-  ADMIN: "No projects yet. Use Create from Transcript to generate them from a meeting.",
+  ADMIN:
+    "No projects yet. Use Create from Transcript to generate them from a meeting.",
   MANAGER: "No projects are assigned to you yet.",
   AGENT: "No projects include tasks assigned to you yet.",
 };
 
+const SUBTITLE: Record<string, string> = {
+  ADMIN: "Every project and task across the workspace.",
+  MANAGER: "The projects you manage and your team's workload.",
+  AGENT: "Projects that include tasks assigned to you.",
+};
+
+function greeting(now: Date): string {
+  const h = now.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export default async function ProjectsPage() {
   const user = await requireUser();
-  const projects = await getProjects(user);
+  const [projects, tasks, meetings] = await Promise.all([
+    getProjects(user),
+    getVisibleTasks(user),
+    getMeetings(user, 1),
+  ]);
+  const now = new Date();
+  const today = todayYmd(now);
+  const firstName = user.name.split(" ")[0];
+
+  const summaries: ProjectSummary[] = projects.map((p) => {
+    const own = tasks.filter((t) => t.projectId === p.id);
+    return {
+      ...p,
+      hours: own.reduce((n, t) => n + t.estimatedHours, 0),
+      done: own.filter((t) => t.status === "DONE").length,
+      assignees: [...new Set(own.map((t) => t.assigneeName))],
+    };
+  });
+  const totalHours = tasks.reduce((n, t) => n + t.estimatedHours, 0);
+  const next = projects
+    .filter((p) => daysUntil(p.deadline, today) >= 0)
+    .sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
+  const people = new Set(tasks.map((t) => t.assigneeId)).size;
+  const done = tasks.filter((t) => t.status === "DONE").length;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Projects</h1>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow={formatDate(today)}
+        title={`${greeting(now)}, ${firstName}`}
+        description={SUBTITLE[user.role]}
+      >
+        {user.role === "ADMIN" && (
+          <Button asChild>
+            <Link href="/admin/transcript">
+              <Sparkles className="h-4 w-4" aria-hidden /> New from transcript
+            </Link>
+          </Button>
+        )}
+      </PageHeader>
+
       {projects.length === 0 ? (
-        <Card>
-          <CardContent className="text-muted-foreground p-6 text-sm">
-            {EMPTY[user.role]}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<FolderKanban className="h-5 w-5" aria-hidden />}
+          title="Nothing here yet"
+        >
+          {EMPTY[user.role]}
+        </EmptyState>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} />
-          ))}
-        </div>
+        <>
+          <section
+            aria-label="Summary"
+            className="stagger grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+          >
+            <StatCard
+              label="Projects"
+              value={projects.length}
+              icon={FolderKanban}
+              tone="indigo"
+              hint="Visible to you"
+            />
+            <StatCard
+              label={user.role === "AGENT" ? "My tasks" : "Tasks"}
+              value={tasks.length}
+              icon={ListChecks}
+              tone="sky"
+              hint={`${done} done · ${user.role === "AGENT" ? "assigned to you" : `${people} ${people === 1 ? "developer" : "developers"}`}`}
+            />
+            <StatCard
+              label="Estimated effort"
+              value={totalHours}
+              suffix="h"
+              icon={Clock3}
+              tone="emerald"
+              hint="Developer hours"
+            />
+            <StatCard
+              label="Next deadline"
+              value={next ? Math.max(0, daysUntil(next.deadline, today)) : 0}
+              suffix={next ? "days" : undefined}
+              icon={CalendarDays}
+              tone="amber"
+              hint={
+                next
+                  ? `${next.name} · ${relativeDue(daysUntil(next.deadline, today))}`
+                  : "No upcoming deadlines"
+              }
+            />
+          </section>
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <section aria-labelledby="projects-heading" className="min-w-0">
+              <ProjectGrid projects={summaries} today={today} />
+            </section>
+            <div className="animate-fade-up space-y-6 [animation-delay:150ms]">
+              {meetings[0] && <NextAgenda meeting={meetings[0]} />}
+              <UpcomingDeadlines
+                tasks={tasks}
+                projects={projects}
+                today={today}
+              />
+              {user.role !== "AGENT" && <Workload tasks={tasks} />}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

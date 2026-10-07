@@ -2,25 +2,110 @@
 @import "tw-animate-css";
 @import "leaflet/dist/leaflet.css";
 
+/* `dark:` follows the theme toggle: explicit Dark, or System when the OS is dark. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :root:not([data-theme="light"]),
+      :root:not([data-theme="light"]) *
+    ) {
+      @slot;
+    }
+  }
+}
+
 /* Change the brand in ONE place: edit --primary below. */
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  /* Minimal neutral palette: one ink accent; colour only carries meaning (status, errors). */
+  color-scheme: light;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #eef2ff;
-  --accent-foreground: #1e3a8a;
+  --card-foreground: #0a0a0a;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #63636b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
   --destructive: #dc2626;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
+  --success: #15803d;
+  --warning: #b45309;
+  --border: #e7e7ea;
+  --input: #dcdce0;
+  --ring: #171717;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #52525b;
+  --sidebar-muted: #8b8b94;
+  --sidebar-accent: #f4f4f5;
+  --skeleton-shine: #e9e9ec;
+  --grid-line: rgb(0 0 0 / 0.035);
   --radius: 0.625rem;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Dark: same neutral system, ink accent flipped to near-white. Applied when the
+   user picks Dark, or picks System (no data-theme) and the OS is dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #16171a;
+    --foreground: #e4e5e9;
+    --card: #1d1e22;
+    --card-foreground: #e4e5e9;
+    --primary: #dcdee4;
+    --primary-foreground: #1a1b1f;
+    --secondary: #25272c;
+    --secondary-foreground: #d4d6dc;
+    --muted: #222328;
+    --muted-foreground: #9a9fa9;
+    --accent: #2a2c32;
+    --accent-foreground: #e9eaee;
+    --destructive: #ee6b6b;
+    --success: #5cc98a;
+    --warning: #e2b45c;
+    --border: #2d2f35;
+    --input: #3a3d44;
+    --ring: #9ca1ac;
+    --sidebar: #191a1e;
+    --sidebar-foreground: #a2a6b0;
+    --sidebar-muted: #838893;
+    --sidebar-accent: #25272c;
+    --skeleton-shine: #2b2d33;
+    --grid-line: rgb(255 255 255 / 0.03);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #16171a;
+  --foreground: #e4e5e9;
+  --card: #1d1e22;
+  --card-foreground: #e4e5e9;
+  --primary: #dcdee4;
+  --primary-foreground: #1a1b1f;
+  --secondary: #25272c;
+  --secondary-foreground: #d4d6dc;
+  --muted: #222328;
+  --muted-foreground: #9a9fa9;
+  --accent: #2a2c32;
+  --accent-foreground: #e9eaee;
+  --destructive: #ee6b6b;
+  --success: #5cc98a;
+  --warning: #e2b45c;
+  --border: #2d2f35;
+  --input: #3a3d44;
+  --ring: #9ca1ac;
+  --sidebar: #191a1e;
+  --sidebar-foreground: #a2a6b0;
+  --sidebar-muted: #838893;
+  --sidebar-accent: #25272c;
+  --skeleton-shine: #2b2d33;
+  --grid-line: rgb(255 255 255 / 0.03);
 }
 
 @theme inline {
@@ -37,18 +122,109 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --ease-soft: var(--ease-out-soft);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-lift:
+    0 2px 4px rgb(10 10 10 / 0.04), 0 8px 24px -6px rgb(10 10 10 / 0.1);
+
+  --animate-fade-up: fade-up 0.5s var(--ease-out-soft) both;
+  --animate-fade-in: fade-in 0.4s var(--ease-out-soft) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-grow-x: grow-x 0.9s var(--ease-out-soft) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes grow-x {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
+/* Staggered entrance: put `stagger` on a parent and each direct child fades up in turn. */
+.stagger > * {
+  animation: var(--animate-fade-up);
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 250ms;
+}
+.stagger > *:nth-child(n + 7) {
+  animation-delay: 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

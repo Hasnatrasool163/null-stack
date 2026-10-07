@@ -1,18 +1,34 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { structured, type ChatMessage } from "@/lib/llm";
 import { query, withTransaction } from "@/lib/db";
-import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { todayYmd } from "@/lib/format";
+import { buildUserPrompt, SYSTEM_PROMPT } from "@/lib/prompts";
 import { Draft, MAX_TRANSCRIPT_CHARS } from "@/lib/schemas";
 import type {
+  CreatedProject,
   DraftError,
+  DuplicateMeeting,
+  MeetingInsights,
   Role,
   SessionUser,
   TeamMember,
 } from "@/lib/types";
 
 export type CreateOutcome =
-  | { ok: true; projects: { id: string; name: string; taskCount: number }[] }
-  | { ok: false; status: 400 | 403 | 409 | 422 | 502; errors: DraftError[] };
+  | {
+      ok: true;
+      projects: CreatedProject[];
+      insights: MeetingInsights;
+      meetingId: string;
+    }
+  | {
+      ok: false;
+      status: 400 | 403 | 409 | 422 | 502;
+      reason: "NOT_RELEVANT" | "INVALID" | "ERROR" | "DUPLICATE";
+      errors: DraftError[];
+      insights?: MeetingInsights;
+      duplicate?: DuplicateMeeting;
+    };
 
 const globalForLock = globalThis as unknown as { __creating?: boolean };
 
@@ -20,7 +36,30 @@ const fail = (
   status: 400 | 403 | 409 | 422 | 502,
   where: string,
   message: string,
-): CreateOutcome => ({ ok: false, status, errors: [{ where, message }] });
+): CreateOutcome => ({
+  ok: false,
+  status,
+  reason: "ERROR",
+  errors: [{ where, message }],
+});
+
+function toInsights(draft: Draft): MeetingInsights {
+  const m = draft.meeting;
+  return {
+    title: m.title.trim() || "Untitled meeting",
+    category: draft.relevance.category.trim(),
+    summary: m.summary.trim(),
+    openQuestions: m.openQuestions.map((q) => q.trim()).filter(Boolean),
+    agenda: m.agenda
+      .filter((a) => a.topic.trim())
+      .map((a) => ({
+        topic: a.topic.trim(),
+        reason: a.reason.trim(),
+        kind: a.kind,
+        suggestedOwner: a.suggestedOwner?.trim() || null,
+      })),
+  };
+}
 
 function isRealDate(value: string | null): value is string {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -44,7 +83,8 @@ export function validateDraft(
   if (draft.projects.length === 0) {
     errors.push({
       where: "Transcript",
-      message: "No projects found in the transcript.",
+      message:
+        "No agreed projects or tasks were found. Make sure the transcript names the client, the work, an owner, a deadline and estimated hours.",
     });
   }
   for (const u of draft.unresolved) {
@@ -127,9 +167,113 @@ async function loadDirectory(): Promise<TeamMember[]> {
   );
 }
 
-async function saveDraft(draft: Draft) {
+/** Same transcript = same words; spacing, line breaks and case are ignored. */
+export function transcriptHash(transcript: string): string {
+  const normalized = transcript.replace(/\s+/g, " ").trim().toLowerCase();
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+/** The latest saved analysis of this exact transcript, if any. */
+async function findDuplicate(hash: string): Promise<DuplicateMeeting | null> {
+  const [m] = await query<{
+    id: string;
+    title: string;
+    created_at: Date;
+    created_by_name: string;
+    project_ids: string[];
+  }>(
+    `SELECT mt.id, mt.title, mt.created_at, u.name AS created_by_name, mt.project_ids
+       FROM meetings mt JOIN users u ON u.id = mt.created_by
+      WHERE mt.transcript_hash = $1 AND mt.saved
+      ORDER BY mt.created_at DESC
+      LIMIT 1`,
+    [hash],
+  );
+  if (!m) return null;
+  const projects = await query<{
+    id: string;
+    name: string;
+    task_count: number;
+  }>(
+    `SELECT p.id, p.name, (SELECT count(*)::int FROM tasks t WHERE t.project_id = p.id) AS task_count
+       FROM projects p WHERE p.id = ANY($1) ORDER BY p.name`,
+    [m.project_ids],
+  );
+  return {
+    meetingId: m.id,
+    title: m.title || "Untitled meeting",
+    createdAt: new Date(m.created_at).toISOString(),
+    createdByName: m.created_by_name,
+    projects: projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      taskCount: p.task_count,
+    })),
+  };
+}
+
+type TranscriptSource = { transcript: string; sourceName: string | null };
+
+/**
+ * Records an analysis that saved nothing (not relevant / needs fixes) so it
+ * still shows in the transcript history. Best effort: never blocks the reply.
+ */
+async function recordUnsaved(
+  user: SessionUser,
+  outcome: "NOT_RELEVANT" | "INVALID",
+  insights: MeetingInsights,
+  errors: DraftError[],
+  hash: string,
+  source: TranscriptSource,
+): Promise<void> {
+  try {
+    await query(
+      `INSERT INTO meetings (id, created_by, title, category, summary, open_questions, agenda,
+                             saved, transcript_hash, transcript, source_name, outcome, errors)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,false,$8,$9,$10,$11,$12)`,
+      [
+        randomUUID(),
+        user.id,
+        insights.title,
+        insights.category,
+        insights.summary,
+        JSON.stringify(insights.openQuestions),
+        JSON.stringify(insights.agenda),
+        hash,
+        source.transcript,
+        source.sourceName,
+        outcome,
+        JSON.stringify(errors),
+      ],
+    );
+  } catch {
+    // History is a convenience; the user still gets their result.
+  }
+}
+
+async function saveDraft(
+  draft: Draft,
+  insights: MeetingInsights,
+  user: SessionUser,
+  names: Map<string, string>,
+  hash: string,
+  replace: DuplicateMeeting | null,
+  source: TranscriptSource,
+): Promise<{ projects: CreatedProject[]; meetingId: string }> {
   return withTransaction(async (client) => {
-    const created: { id: string; name: string; taskCount: number }[] = [];
+    // Replace: remove the earlier run's projects (tasks and threads cascade)
+    // in the same transaction, so a failed save never loses the old data.
+    if (replace) {
+      await client.query("DELETE FROM projects WHERE id = ANY($1)", [
+        replace.projects.map((p) => p.id),
+      ]);
+      // Kept for the history page, but no longer offered as a duplicate.
+      await client.query(
+        "UPDATE meetings SET saved = false, outcome = 'REPLACED' WHERE id = $1",
+        [replace.meetingId],
+      );
+    }
+    const created: CreatedProject[] = [];
     for (const p of draft.projects) {
       const projectId = randomUUID();
       await client.query(
@@ -146,8 +290,9 @@ async function saveDraft(draft: Draft) {
       );
       for (const t of p.tasks) {
         await client.query(
-          `INSERT INTO tasks (id, project_id, title, description, assignee_id, deadline, estimated_hours)
-           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          `INSERT INTO tasks (id, project_id, title, description, assignee_id, deadline,
+                              estimated_hours, reported_by, updated_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)`,
           [
             randomUUID(),
             projectId,
@@ -156,6 +301,7 @@ async function saveDraft(draft: Draft) {
             t.assigneeId,
             t.deadline,
             t.estimatedHours,
+            user.id,
           ],
         );
       }
@@ -163,20 +309,64 @@ async function saveDraft(draft: Draft) {
         id: projectId,
         name: p.name!.trim(),
         taskCount: p.tasks.length,
+        clientName: p.clientName!.trim(),
+        managerName: names.get(p.managerId!) ?? p.managerId!,
+        deadline: p.deadline!,
+        tasks: p.tasks.map((t) => ({
+          title: t.title!.trim(),
+          description: t.description?.trim() ?? "",
+          assigneeName: names.get(t.assigneeId!) ?? t.assigneeId!,
+          deadline: t.deadline!,
+          estimatedHours: t.estimatedHours!,
+        })),
       });
     }
-    return created;
+    const meetingId = randomUUID();
+    await client.query(
+      `INSERT INTO meetings (id, created_by, title, category, summary, open_questions, agenda,
+                             project_ids, saved, transcript_hash, transcript, source_name, outcome)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9,$10,$11,'SAVED')`,
+      [
+        meetingId,
+        user.id,
+        insights.title,
+        insights.category,
+        insights.summary,
+        JSON.stringify(insights.openQuestions),
+        JSON.stringify(insights.agenda),
+        created.map((c) => c.id),
+        hash,
+        source.transcript,
+        source.sourceName,
+      ],
+    );
+    return { projects: created, meetingId };
   });
 }
 
-const AI_OPTIONS = { temperature: 0, maxTokens: 4000, timeoutMs: 40_000, cache: false };
+const AI_OPTIONS = {
+  temperature: 0,
+  maxTokens: 6000,
+  timeoutMs: 40_000,
+  cache: false,
+};
 
 export async function createFromTranscript(
   user: SessionUser,
   transcript: string,
+  onDuplicate?: "replace" | "keep",
+  sourceName?: string,
 ): Promise<CreateOutcome> {
+  const source: TranscriptSource = {
+    transcript,
+    sourceName: sourceName ?? null,
+  };
   if (user.role !== "ADMIN") {
-    return fail(403, "Access", "Only admins can create projects from a transcript.");
+    return fail(
+      403,
+      "Access",
+      "Only admins can create projects from a transcript.",
+    );
   }
   if (!transcript.trim()) {
     return fail(400, "Transcript", "Paste a meeting transcript first.");
@@ -189,17 +379,40 @@ export async function createFromTranscript(
     );
   }
   if (globalForLock.__creating) {
-    return fail(409, "Busy", "A creation is already running. Please wait for it to finish.");
+    return fail(
+      409,
+      "Busy",
+      "A creation is already running. Please wait for it to finish.",
+    );
   }
   globalForLock.__creating = true;
   try {
+    // Checked before the AI call, so a repeat costs nothing until the admin decides.
+    const hash = transcriptHash(transcript);
+    const duplicate = onDuplicate === "keep" ? null : await findDuplicate(hash);
+    if (duplicate && !onDuplicate) {
+      return {
+        ok: false,
+        status: 409,
+        reason: "DUPLICATE",
+        errors: [
+          {
+            where: "Transcript",
+            message: "This transcript was already processed.",
+          },
+        ],
+        duplicate,
+      };
+    }
+
     const directory = await loadDirectory();
     const roles = new Map(directory.map((u) => [u.id, u.role]));
+    const names = new Map(directory.map((u) => [u.id, u.name]));
     const messages: ChatMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `TEAM DIRECTORY (JSON):\n${JSON.stringify(directory)}\n\nTRANSCRIPT:\n${transcript}`,
+        content: buildUserPrompt(directory, todayYmd(), transcript),
       },
     ];
 
@@ -207,10 +420,38 @@ export async function createFromTranscript(
     let errors: DraftError[];
     try {
       draft = await structured(Draft, messages, AI_OPTIONS);
+      if (!draft.relevance.isRelevant) {
+        const notRelevant: DraftError[] = [
+          {
+            where: draft.relevance.category.trim() || "Transcript",
+            message:
+              draft.relevance.reason.trim() ||
+              "This meeting does not discuss software, IT or technical work, so no tasks were created.",
+          },
+        ];
+        const insights = toInsights(draft);
+        await recordUnsaved(
+          user,
+          "NOT_RELEVANT",
+          insights,
+          notRelevant,
+          hash,
+          source,
+        );
+        return {
+          ok: false,
+          status: 422,
+          reason: "NOT_RELEVANT",
+          errors: notRelevant,
+          insights,
+        };
+      }
       errors = validateDraft(draft, roles);
       if (errors.length > 0) {
         // One automatic repair attempt: feed the validation errors back once.
-        const issues = errors.map((e) => `- ${e.where}: ${e.message}`).join("\n");
+        const issues = errors
+          .map((e) => `- ${e.where}: ${e.message}`)
+          .join("\n");
         draft = await structured(
           Draft,
           [
@@ -233,11 +474,22 @@ export async function createFromTranscript(
       );
     }
 
+    const insights = toInsights(draft);
     if (errors.length > 0) {
-      return { ok: false, status: 422, errors };
+      await recordUnsaved(user, "INVALID", insights, errors, hash, source);
+      return { ok: false, status: 422, reason: "INVALID", errors, insights };
     }
     try {
-      return { ok: true, projects: await saveDraft(draft) };
+      const saved = await saveDraft(
+        draft,
+        insights,
+        user,
+        names,
+        hash,
+        onDuplicate === "replace" ? duplicate : null,
+        source,
+      );
+      return { ok: true, insights, ...saved };
     } catch {
       return fail(
         502,
