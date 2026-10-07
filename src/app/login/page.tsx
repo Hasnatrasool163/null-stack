@@ -33,14 +33,14 @@ export default async function LoginPage() {
   if (user) redirect(user.role === "AGENT" ? "/my-tasks" : "/projects");
   return (
     <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <section className="bg-secondary/60 relative hidden overflow-hidden border-r p-12 lg:flex lg:flex-col">
+      <section className="bg-accent/50 relative hidden overflow-hidden border-r p-12 lg:flex lg:flex-col">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.035)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_30%_60%,black_30%,transparent_75%)] bg-[size:40px_40px]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(15,118,110,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(15,118,110,0.07)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_30%_60%,black_30%,transparent_75%)] bg-[size:40px_40px]"
         />
         <Logo className="relative" />
         <div className="relative mt-auto max-w-md">
-          <p className="text-muted-foreground font-mono text-xs tracking-wider">
+          <p className="text-primary font-mono text-xs tracking-wider">
             null → plan
           </p>
           <h2 className="animate-fade-up mt-3 text-4xl leading-[1.15] font-semibold tracking-tight">
@@ -52,7 +52,7 @@ export default async function LoginPage() {
                 key={text}
                 className="text-muted-foreground flex items-start gap-3 text-sm"
               >
-                <span className="bg-card text-foreground grid h-8 w-8 shrink-0 place-items-center rounded-lg border">
+                <span className="bg-card text-primary border-primary/15 grid h-8 w-8 shrink-0 place-items-center rounded-lg border">
                   <Icon className="h-4 w-4" aria-hidden />
                 </span>
                 <span className="pt-1.5">{text}</span>

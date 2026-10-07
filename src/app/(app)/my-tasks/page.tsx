@@ -112,7 +112,7 @@ export default async function MyTasksPage() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="bg-secondary text-foreground grid h-10 w-10 shrink-0 place-items-center rounded-lg border">
+                    <span className="bg-accent text-accent-foreground grid h-10 w-10 shrink-0 place-items-center rounded-lg">
                       <FolderKanban className="h-5 w-5" aria-hidden />
                     </span>
                     <div className="min-w-0">
