@@ -21,7 +21,13 @@ import { Textarea, Label } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/misc";
 import { MAX_TRANSCRIPT_CHARS } from "@/lib/schemas";
 import { readTranscriptFile, TRANSCRIPT_ACCEPT } from "@/lib/transcript-file";
-import type { CreatedProject, DraftError, MeetingInsights } from "@/lib/types";
+import { DuplicateDialog } from "@/components/duplicate-dialog";
+import type {
+  CreatedProject,
+  DraftError,
+  DuplicateMeeting,
+  MeetingInsights,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type State =
@@ -135,14 +141,17 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
   const pending = state.kind === "pending";
   const nearLimit = text.length > MAX_TRANSCRIPT_CHARS * 0.9;
 
-  async function submit() {
+  const [duplicate, setDuplicate] = useState<DuplicateMeeting | null>(null);
+
+  async function submit(onDuplicate?: "replace" | "keep") {
     if (pending || !text.trim()) return;
+    setDuplicate(null);
     setState({ kind: "pending" });
     try {
       const res = await fetch("/api/transcript", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: text }),
+        body: JSON.stringify({ transcript: text, onDuplicate }),
       });
       const data: unknown = await res.json();
       const body = data as {
@@ -151,7 +160,14 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
         projects?: CreatedProject[];
         insights?: MeetingInsights;
         errors?: DraftError[];
+        duplicate?: DuplicateMeeting;
       };
+      if (body.reason === "DUPLICATE" && body.duplicate) {
+        // Nothing ran yet: go back to idle and let the admin choose.
+        setState({ kind: "idle" });
+        setDuplicate(body.duplicate);
+        return;
+      }
       if (res.ok && body.ok && body.projects && body.insights) {
         setState({
           kind: "success",
@@ -159,7 +175,7 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
           insights: body.insights,
         });
         toast.success(
-          `Created ${body.projects.length} ${body.projects.length === 1 ? "project" : "projects"}`,
+          `${onDuplicate === "replace" ? "Replaced with" : "Created"} ${body.projects.length} ${body.projects.length === 1 ? "project" : "projects"}`,
         );
       } else {
         const errors = body.errors?.length
@@ -195,6 +211,12 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
       : state.insights;
   return (
     <div className="space-y-8">
+      <DuplicateDialog
+        duplicate={duplicate}
+        onReplace={() => void submit("replace")}
+        onKeepBoth={() => void submit("keep")}
+        onCancel={() => setDuplicate(null)}
+      />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <form
           onSubmit={(e) => {

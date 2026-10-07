@@ -141,6 +141,16 @@ export type Meeting = MeetingInsights & {
   projectIds: string[];
 };
 
+/** An earlier analysis of the same transcript, offered for replace / keep both. */
+export type DuplicateMeeting = {
+  meetingId: string;
+  title: string;
+  createdAt: string;
+  createdByName: string;
+  /** Projects it created that still exist. */
+  projects: { id: string; name: string; taskCount: number }[];
+};
+
 export type TranscriptResult =
   | {
       ok: true;
@@ -150,7 +160,8 @@ export type TranscriptResult =
     }
   | {
       ok: false;
-      reason: "NOT_RELEVANT" | "INVALID" | "ERROR";
+      reason: "NOT_RELEVANT" | "INVALID" | "ERROR" | "DUPLICATE";
       errors: DraftError[];
       insights?: MeetingInsights;
+      duplicate?: DuplicateMeeting;
     };

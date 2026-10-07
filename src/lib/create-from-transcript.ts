@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { structured, type ChatMessage } from "@/lib/llm";
 import { query, withTransaction } from "@/lib/db";
 import { todayYmd } from "@/lib/format";
@@ -7,6 +7,7 @@ import { Draft, MAX_TRANSCRIPT_CHARS } from "@/lib/schemas";
 import type {
   CreatedProject,
   DraftError,
+  DuplicateMeeting,
   MeetingInsights,
   Role,
   SessionUser,
@@ -23,9 +24,10 @@ export type CreateOutcome =
   | {
       ok: false;
       status: 400 | 403 | 409 | 422 | 502;
-      reason: "NOT_RELEVANT" | "INVALID" | "ERROR";
+      reason: "NOT_RELEVANT" | "INVALID" | "ERROR" | "DUPLICATE";
       errors: DraftError[];
       insights?: MeetingInsights;
+      duplicate?: DuplicateMeeting;
     };
 
 const globalForLock = globalThis as unknown as { __creating?: boolean };
@@ -165,13 +167,70 @@ async function loadDirectory(): Promise<TeamMember[]> {
   );
 }
 
+/** Same transcript = same words; spacing, line breaks and case are ignored. */
+export function transcriptHash(transcript: string): string {
+  const normalized = transcript.replace(/\s+/g, " ").trim().toLowerCase();
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+/** The latest saved analysis of this exact transcript, if any. */
+async function findDuplicate(hash: string): Promise<DuplicateMeeting | null> {
+  const [m] = await query<{
+    id: string;
+    title: string;
+    created_at: Date;
+    created_by_name: string;
+    project_ids: string[];
+  }>(
+    `SELECT mt.id, mt.title, mt.created_at, u.name AS created_by_name, mt.project_ids
+       FROM meetings mt JOIN users u ON u.id = mt.created_by
+      WHERE mt.transcript_hash = $1 AND mt.saved
+      ORDER BY mt.created_at DESC
+      LIMIT 1`,
+    [hash],
+  );
+  if (!m) return null;
+  const projects = await query<{
+    id: string;
+    name: string;
+    task_count: number;
+  }>(
+    `SELECT p.id, p.name, (SELECT count(*)::int FROM tasks t WHERE t.project_id = p.id) AS task_count
+       FROM projects p WHERE p.id = ANY($1) ORDER BY p.name`,
+    [m.project_ids],
+  );
+  return {
+    meetingId: m.id,
+    title: m.title || "Untitled meeting",
+    createdAt: new Date(m.created_at).toISOString(),
+    createdByName: m.created_by_name,
+    projects: projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      taskCount: p.task_count,
+    })),
+  };
+}
+
 async function saveDraft(
   draft: Draft,
   insights: MeetingInsights,
   user: SessionUser,
   names: Map<string, string>,
+  hash: string,
+  replace: DuplicateMeeting | null,
 ): Promise<{ projects: CreatedProject[]; meetingId: string }> {
   return withTransaction(async (client) => {
+    // Replace: remove the earlier run's projects (tasks and threads cascade)
+    // in the same transaction, so a failed save never loses the old data.
+    if (replace) {
+      await client.query("DELETE FROM projects WHERE id = ANY($1)", [
+        replace.projects.map((p) => p.id),
+      ]);
+      await client.query("DELETE FROM meetings WHERE id = $1", [
+        replace.meetingId,
+      ]);
+    }
     const created: CreatedProject[] = [];
     for (const p of draft.projects) {
       const projectId = randomUUID();
@@ -222,8 +281,9 @@ async function saveDraft(
     }
     const meetingId = randomUUID();
     await client.query(
-      `INSERT INTO meetings (id, created_by, title, category, summary, open_questions, agenda, project_ids, saved)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true)`,
+      `INSERT INTO meetings (id, created_by, title, category, summary, open_questions, agenda,
+                             project_ids, saved, transcript_hash)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9)`,
       [
         meetingId,
         user.id,
@@ -233,6 +293,7 @@ async function saveDraft(
         JSON.stringify(insights.openQuestions),
         JSON.stringify(insights.agenda),
         created.map((c) => c.id),
+        hash,
       ],
     );
     return { projects: created, meetingId };
@@ -249,6 +310,7 @@ const AI_OPTIONS = {
 export async function createFromTranscript(
   user: SessionUser,
   transcript: string,
+  onDuplicate?: "replace" | "keep",
 ): Promise<CreateOutcome> {
   if (user.role !== "ADMIN") {
     return fail(
@@ -276,6 +338,24 @@ export async function createFromTranscript(
   }
   globalForLock.__creating = true;
   try {
+    // Checked before the AI call, so a repeat costs nothing until the admin decides.
+    const hash = transcriptHash(transcript);
+    const duplicate = onDuplicate === "keep" ? null : await findDuplicate(hash);
+    if (duplicate && !onDuplicate) {
+      return {
+        ok: false,
+        status: 409,
+        reason: "DUPLICATE",
+        errors: [
+          {
+            where: "Transcript",
+            message: "This transcript was already processed.",
+          },
+        ],
+        duplicate,
+      };
+    }
+
     const directory = await loadDirectory();
     const roles = new Map(directory.map((u) => [u.id, u.role]));
     const names = new Map(directory.map((u) => [u.id, u.name]));
@@ -340,7 +420,14 @@ export async function createFromTranscript(
       return { ok: false, status: 422, reason: "INVALID", errors, insights };
     }
     try {
-      const saved = await saveDraft(draft, insights, user, names);
+      const saved = await saveDraft(
+        draft,
+        insights,
+        user,
+        names,
+        hash,
+        onDuplicate === "replace" ? duplicate : null,
+      );
       return { ok: true, insights, ...saved };
     } catch {
       return fail(

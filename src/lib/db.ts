@@ -87,6 +87,12 @@ CREATE TABLE IF NOT EXISTS meetings (
   open_questions jsonb NOT NULL DEFAULT '[]'::jsonb, agenda jsonb NOT NULL DEFAULT '[]'::jsonb,
   project_ids text[] NOT NULL DEFAULT '{}', saved boolean NOT NULL DEFAULT false);`,
   },
+  {
+    id: "005_meeting_transcript_hash",
+    sql: `
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS transcript_hash text;
+CREATE INDEX IF NOT EXISTS meetings_transcript_hash_idx ON meetings(transcript_hash);`,
+  },
 ];
 
 // Arbitrary constant: every instance takes the same lock, so only one migrates at a time.

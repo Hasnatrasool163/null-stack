@@ -10,6 +10,8 @@ export const LoginRequest = z.object({
 
 export const TranscriptRequest = z.object({
   transcript: z.string().max(MAX_TRANSCRIPT_CHARS),
+  /** What to do when this exact transcript was processed before. */
+  onDuplicate: z.enum(["replace", "keep"]).optional(),
 });
 
 export const DraftTask = z.object({

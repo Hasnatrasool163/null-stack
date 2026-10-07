@@ -41,7 +41,11 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const result = await createFromTranscript(user, parsed.data.transcript);
+  const result = await createFromTranscript(
+    user,
+    parsed.data.transcript,
+    parsed.data.onDuplicate,
+  );
   if (result.ok) return NextResponse.json(result);
   return NextResponse.json(
     {
@@ -49,6 +53,7 @@ export async function POST(req: Request) {
       reason: result.reason,
       errors: result.errors,
       insights: result.insights,
+      duplicate: result.duplicate,
     },
     { status: result.status },
   );
