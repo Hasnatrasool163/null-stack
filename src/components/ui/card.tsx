@@ -7,7 +7,7 @@ export const Card = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "bg-card text-card-foreground rounded-lg border shadow-sm",
+      "bg-card text-card-foreground shadow-card rounded-xl border",
       className,
     )}
     {...p}
@@ -17,7 +17,7 @@ export const CardHeader = ({
   className,
   ...p
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col gap-1.5 p-6", className)} {...p} />
+  <div className={cn("flex flex-col gap-1.5 p-5 sm:p-6", className)} {...p} />
 );
 export const CardTitle = ({
   className,
@@ -25,7 +25,7 @@ export const CardTitle = ({
 }: React.HTMLAttributes<HTMLHeadingElement>) => (
   <h3
     className={cn(
-      "text-lg leading-none font-semibold tracking-tight",
+      "text-base leading-snug font-semibold tracking-tight",
       className,
     )}
     {...p}
@@ -41,5 +41,5 @@ export const CardContent = ({
   className,
   ...p
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("p-6 pt-0", className)} {...p} />
+  <div className={cn("p-5 pt-0 sm:p-6 sm:pt-0", className)} {...p} />
 );

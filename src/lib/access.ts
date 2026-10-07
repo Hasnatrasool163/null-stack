@@ -162,6 +162,28 @@ export async function getProjectById(
   return { project, tasks };
 }
 
+/**
+ * Every task this user may see, across all visible projects, in one query
+ * (same rules as getTasks). Used for dashboard totals.
+ */
+export async function getVisibleTasks(user: SessionUser): Promise<Task[]> {
+  const scope: Record<SessionUser["role"], { where: string; params: unknown[] }> = {
+    ADMIN: { where: "TRUE", params: [] },
+    MANAGER: { where: "p.manager_id = $1", params: [user.id] },
+    AGENT: { where: "t.assignee_id = $1", params: [user.id] },
+  };
+  const { where, params } = scope[user.role];
+  const rows = await query<TaskRow>(
+    `SELECT ${TASK_COLUMNS} FROM tasks t
+       JOIN users a ON a.id = t.assignee_id
+       JOIN projects p ON p.id = t.project_id
+      WHERE ${where}
+      ORDER BY t.deadline, t.title`,
+    params,
+  );
+  return rows.map(toTask);
+}
+
 /** The signed-in user's own assigned tasks, with project context. */
 export async function getMyTasks(user: SessionUser): Promise<MyTask[]> {
   const rows = await query<
