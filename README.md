@@ -38,9 +38,7 @@ Not done / partial: see [Known Limitations](#known-limitations).
 - Authentication/session: email + password (bcrypt hashes) -> HS256-signed JWT in an http-only, SameSite=Lax cookie (8 h). Every request verifies the cookie and reloads the user and role from the database; the client never supplies an id or role.
 
 ## Links
-- Live application: TODO - not deployed yet
-- Demo video: TODO - add recording URL
-
+- Live application: https://null-stack-9lhbd74o4-muhammad-hasnat-rasools-projects.vercel.app
 ## Requirements
 - Node.js 24 or newer (the setup scripts import TypeScript directly) and npm 11
 - A PostgreSQL database (local, or hosted such as Aiven; we use Aiven. TLS is handled automatically for non-local hosts)
