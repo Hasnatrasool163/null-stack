@@ -38,7 +38,7 @@ export function ProjectActions({
         variant="outline"
         size="sm"
         onClick={() => setDeleting(true)}
-        className="hover:border-destructive/40 hover:text-destructive hover:bg-red-50"
+        className="hover:border-destructive/40 hover:text-destructive hover:bg-red-50 dark:hover:bg-red-500/10"
       >
         <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
       </Button>
@@ -198,7 +198,7 @@ function EditProjectForm({
       {error && (
         <p
           role="alert"
-          className="text-destructive rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm"
+          className="text-destructive rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm dark:border-red-500/30 dark:bg-red-500/10"
         >
           {error}
         </p>

@@ -62,14 +62,14 @@ export function NavLinks({
                 "group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-200",
                 "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
                 active
-                  ? "bg-sidebar-accent text-accent-foreground"
+                  ? "bg-sidebar-accent text-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
               )}
             >
               <span
                 aria-hidden
                 className={cn(
-                  "bg-primary ease-soft absolute inset-y-2.5 left-0 w-[3px] origin-center rounded-r-full transition-transform duration-300",
+                  "bg-foreground ease-soft absolute inset-y-2.5 left-0 w-[3px] origin-center rounded-r-full transition-transform duration-300",
                   active ? "scale-y-100" : "scale-y-0",
                 )}
               />
@@ -77,8 +77,8 @@ export function NavLinks({
                 className={cn(
                   "h-[18px] w-[18px] transition-colors",
                   active
-                    ? "text-primary"
-                    : "text-sidebar-muted group-hover:text-primary",
+                    ? "text-foreground"
+                    : "text-sidebar-muted group-hover:text-foreground",
                 )}
                 aria-hidden
               />

@@ -21,7 +21,7 @@ function Panel({
       className="bg-card shadow-card rounded-xl border"
     >
       <div className="flex items-center gap-2 border-b px-5 py-4">
-        <span className="text-primary">{icon}</span>
+        <span className="text-muted-foreground">{icon}</span>
         <h2 id={id} className="text-sm font-semibold">
           {title}
         </h2>
@@ -64,7 +64,7 @@ export function UpcomingDeadlines({
                 href={`/projects/${t.projectId}`}
                 className="hover:bg-muted focus-visible:ring-ring flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
-                <span className="bg-accent text-accent-foreground grid h-11 w-11 shrink-0 place-items-center rounded-lg text-center text-[11px] leading-tight font-semibold whitespace-pre-line">
+                <span className="bg-secondary text-foreground grid h-11 w-11 shrink-0 place-items-center rounded-lg border text-center text-[11px] leading-tight font-semibold whitespace-pre-line">
                   {formatShortDate(t.deadline).replace(" ", "\n")}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -128,7 +128,7 @@ export function Workload({ tasks }: { tasks: Task[] }) {
                 aria-hidden
               >
                 <div
-                  className="animate-grow-x bg-primary h-full origin-left rounded-full"
+                  className="animate-grow-x bg-foreground/80 h-full origin-left rounded-full"
                   style={{
                     width: `${(r.hours / max) * 100}%`,
                     animationDelay: `${i * 60}ms`,

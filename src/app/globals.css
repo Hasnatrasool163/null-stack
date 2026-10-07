@@ -2,39 +2,110 @@
 @import "tw-animate-css";
 @import "leaflet/dist/leaflet.css";
 
+/* `dark:` follows the theme toggle: explicit Dark, or System when the OS is dark. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :root:not([data-theme="light"]),
+      :root:not([data-theme="light"]) *
+    ) {
+      @slot;
+    }
+  }
+}
+
 /* Change the brand in ONE place: edit --primary below. */
 :root {
-  /* "Functional Precision": teal primary, mint secondary, terracotta tertiary, slate neutral. */
-  --background: #eef2fa;
-  --foreground: #0f1b2d;
-  --card: #f9fbff;
-  --card-foreground: #0f1b2d;
-  --primary: #0f766e;
-  --primary-foreground: #ffffff;
-  --primary-strong: #115e59;
-  --secondary: #e3e9f5;
-  --secondary-foreground: #1e293b;
-  --muted: #e8edf7;
-  --muted-foreground: #526075;
-  --accent: #ccfbf1;
-  --accent-foreground: #115e59;
-  --tertiary: #9c573a;
-  --tertiary-foreground: #ffffff;
-  --tertiary-soft: #f7e6dd;
-  --inverted: #1e293b;
-  --inverted-foreground: #f8fafc;
-  --destructive: #c62828;
-  --success: #0f766e;
-  --warning: #9c573a;
-  --border: #d6deed;
-  --input: #c6d0e2;
-  --ring: #0f766e;
-  --sidebar: #f9fbff;
-  --sidebar-foreground: #3c4a5e;
-  --sidebar-muted: #64748b;
-  --sidebar-accent: #ccfbf1;
-  --radius: 0.75rem;
+  /* Minimal neutral palette: one ink accent; colour only carries meaning (status, errors). */
+  color-scheme: light;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #63636b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --success: #15803d;
+  --warning: #b45309;
+  --border: #e7e7ea;
+  --input: #dcdce0;
+  --ring: #171717;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #52525b;
+  --sidebar-muted: #8b8b94;
+  --sidebar-accent: #f4f4f5;
+  --skeleton-shine: #e9e9ec;
+  --grid-line: rgb(0 0 0 / 0.035);
+  --radius: 0.625rem;
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Dark: same neutral system, ink accent flipped to near-white. Applied when the
+   user picks Dark, or picks System (no data-theme) and the OS is dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #0b0b0c;
+    --foreground: #f4f4f5;
+    --card: #141416;
+    --card-foreground: #f4f4f5;
+    --primary: #f4f4f5;
+    --primary-foreground: #111113;
+    --secondary: #1e1e21;
+    --secondary-foreground: #e4e4e7;
+    --muted: #1b1b1e;
+    --muted-foreground: #a1a1aa;
+    --accent: #232327;
+    --accent-foreground: #f4f4f5;
+    --destructive: #ef4444;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --border: #27272b;
+    --input: #34343a;
+    --ring: #d4d4d8;
+    --sidebar: #0f0f11;
+    --sidebar-foreground: #a1a1aa;
+    --sidebar-muted: #71717a;
+    --sidebar-accent: #1e1e21;
+    --skeleton-shine: #26262b;
+    --grid-line: rgb(255 255 255 / 0.04);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b0b0c;
+  --foreground: #f4f4f5;
+  --card: #141416;
+  --card-foreground: #f4f4f5;
+  --primary: #f4f4f5;
+  --primary-foreground: #111113;
+  --secondary: #1e1e21;
+  --secondary-foreground: #e4e4e7;
+  --muted: #1b1b1e;
+  --muted-foreground: #a1a1aa;
+  --accent: #232327;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ef4444;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --border: #27272b;
+  --input: #34343a;
+  --ring: #d4d4d8;
+  --sidebar: #0f0f11;
+  --sidebar-foreground: #a1a1aa;
+  --sidebar-muted: #71717a;
+  --sidebar-accent: #1e1e21;
+  --skeleton-shine: #26262b;
+  --grid-line: rgb(255 255 255 / 0.04);
 }
 
 @theme inline {
@@ -50,12 +121,6 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-primary-strong: var(--primary-strong);
-  --color-tertiary: var(--tertiary);
-  --color-tertiary-foreground: var(--tertiary-foreground);
-  --color-tertiary-soft: var(--tertiary-soft);
-  --color-inverted: var(--inverted);
-  --color-inverted-foreground: var(--inverted-foreground);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
@@ -70,10 +135,10 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --ease-soft: var(--ease-out-soft);
-  --shadow-card: 0 1px 2px rgb(15 27 45 / 0.04);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.05);
   --shadow-lift:
     0 2px 4px rgb(10 10 10 / 0.04), 0 8px 24px -6px rgb(10 10 10 / 0.1);
 
@@ -122,7 +187,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-feature-settings: "cv11";
+  font-feature-settings: "cv11", "ss01";
 }
 
 ::selection {

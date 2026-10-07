@@ -122,7 +122,7 @@ export function DuplicateDialog({
           {effective === "replace" && (
             <p
               role="note"
-              className="text-tertiary bg-tertiary-soft flex gap-2 rounded-lg px-3 py-2.5 text-sm"
+              className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300"
             >
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               Any edits, status changes, links and comments on those
@@ -141,7 +141,7 @@ export function DuplicateDialog({
               Cancel
             </Button>
             <Button
-              variant={effective === "replace" ? "tertiary" : "default"}
+              variant={effective === "replace" ? "destructive" : "default"}
               onClick={() => {
                 setChoice("replace");
                 if (effective === "replace") onReplace();

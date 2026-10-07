@@ -26,7 +26,7 @@ const SORTS: Record<
 };
 
 const selectCls =
-  "border-input bg-card h-10 cursor-pointer rounded-lg border px-3 text-sm shadow-xs transition-colors hover:border-primary/40 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
+  "border-input bg-card h-10 cursor-pointer rounded-lg border px-3 text-sm shadow-xs transition-colors hover:border-zinc-400 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none dark:hover:border-zinc-600";
 
 /** Project cards with instant client-side search, manager filter and sorting. */
 export function ProjectGrid({

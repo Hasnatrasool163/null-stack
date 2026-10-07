@@ -168,7 +168,7 @@ function AddTaskForm({
       {error && (
         <p
           role="alert"
-          className="text-destructive rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm"
+          className="text-destructive rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm dark:border-red-500/30 dark:bg-red-500/10"
         >
           {error}
         </p>

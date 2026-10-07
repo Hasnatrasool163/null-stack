@@ -22,7 +22,7 @@ export function ProjectCard({
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group bg-card shadow-card hover:shadow-lift focus-visible:ring-ring ease-soft hover:border-primary/35 relative flex h-full cursor-pointer flex-col rounded-xl border p-5 transition-[box-shadow,border-color,transform] duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:outline-none"
+      className="group bg-card shadow-card hover:shadow-lift focus-visible:ring-ring ease-soft relative flex h-full cursor-pointer flex-col rounded-xl border p-5 transition-[box-shadow,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-zinc-300 focus-visible:ring-2 focus-visible:outline-none dark:hover:border-zinc-600"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -34,7 +34,7 @@ export function ProjectCard({
           </h3>
         </div>
         <ArrowUpRight
-          className="text-muted-foreground group-hover:text-primary h-5 w-5 shrink-0 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          className="text-muted-foreground group-hover:text-foreground h-5 w-5 shrink-0 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
           aria-hidden
         />
       </div>

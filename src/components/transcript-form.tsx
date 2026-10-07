@@ -64,10 +64,10 @@ function Progress() {
       aria-live="polite"
     >
       <div className="flex items-center gap-3">
-        <span className="bg-primary text-primary-foreground relative grid h-10 w-10 place-items-center rounded-lg">
+        <span className="bg-foreground text-background relative grid h-10 w-10 place-items-center rounded-lg">
           <Sparkles className="h-5 w-5" aria-hidden />
           <span
-            className="bg-primary/25 absolute inset-0 animate-ping rounded-lg"
+            className="bg-foreground/20 absolute inset-0 animate-ping rounded-lg"
             aria-hidden
           />
         </span>
@@ -87,8 +87,8 @@ function Progress() {
               <span
                 className={cn(
                   "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors duration-300",
-                  done && "border-primary bg-primary text-primary-foreground",
-                  active && "border-primary text-primary",
+                  done && "border-foreground bg-foreground text-background",
+                  active && "border-foreground text-foreground",
                   !done && !active && "text-muted-foreground",
                 )}
               >
@@ -230,7 +230,7 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
               htmlFor="transcript"
               className="inline-flex items-center gap-2"
             >
-              <FileText className="text-primary h-4 w-4" aria-hidden />
+              <FileText className="text-muted-foreground h-4 w-4" aria-hidden />
               Meeting transcript
             </Label>
             <div className="flex flex-wrap items-center gap-1">
@@ -405,7 +405,7 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
                   "You also get a summary, open questions and a suggested agenda for the next meeting.",
                 ].map((s, i) => (
                   <li key={s} className="flex gap-3">
-                    <span className="bg-accent text-accent-foreground grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold">
+                    <span className="bg-secondary text-foreground grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-semibold">
                       {i + 1}
                     </span>
                     {s}
@@ -453,7 +453,7 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
           {state.kind === "error" && (
             <div
               role="alert"
-              className="animate-fade-up rounded-xl border border-red-200 bg-red-50/60 p-5"
+              className="animate-fade-up rounded-xl border border-red-200 bg-red-50/60 p-5 dark:border-red-500/30 dark:bg-red-500/10"
             >
               <div className="flex items-start gap-3">
                 <AlertTriangle
@@ -461,10 +461,10 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
                   aria-hidden
                 />
                 <div className="min-w-0">
-                  <p className="font-semibold text-red-900">
+                  <p className="font-semibold text-red-900 dark:text-red-300">
                     Nothing was saved
                   </p>
-                  <p className="mt-0.5 text-sm text-red-800">
+                  <p className="mt-0.5 text-sm text-red-800 dark:text-red-300">
                     Please fix the following and try again:
                   </p>
                 </div>
@@ -473,9 +473,9 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
                 {state.errors.map((er, i) => (
                   <li
                     key={i}
-                    className="bg-card rounded-lg border border-red-100 px-3 py-2 text-sm"
+                    className="bg-card rounded-lg border border-red-100 px-3 py-2 text-sm dark:border-red-500/30"
                   >
-                    <span className="font-semibold text-red-900">
+                    <span className="font-semibold text-red-900 dark:text-red-300">
                       {er.where}
                     </span>
                     <span className="text-foreground block">{er.message}</span>

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 type Person = { id: string; name: string };
 
 const selectCls =
-  "border-input bg-card h-10 cursor-pointer rounded-lg border px-3 text-sm shadow-xs transition-colors hover:border-primary/40 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
+  "border-input bg-card h-10 cursor-pointer rounded-lg border px-3 text-sm shadow-xs transition-colors hover:border-zinc-400 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none dark:hover:border-zinc-600";
 
 export function KanbanBoard({
   initialTasks,
@@ -226,7 +226,7 @@ export function KanbanBoard({
                     "animate-fade-up flex min-h-[24rem] flex-col rounded-xl border p-2 transition-colors duration-200",
                     meta.column,
                     overCol === status &&
-                      "border-primary/50 ring-primary/10 bg-accent/60 ring-4",
+                      "border-foreground/40 ring-foreground/10 bg-zinc-100 ring-4 dark:bg-zinc-800/60",
                   )}
                 >
                   <header className="flex items-center gap-2 px-2 pt-1.5 pb-3">
@@ -261,7 +261,7 @@ export function KanbanBoard({
                       </li>
                     ))}
                     {col.length === 0 && (
-                      <li className="text-muted-foreground border-input grid flex-1 place-items-center rounded-lg border border-dashed p-6 text-center text-xs">
+                      <li className="text-muted-foreground grid flex-1 place-items-center rounded-lg border border-dashed border-zinc-300 p-6 text-center text-xs dark:border-zinc-700">
                         {dragId
                           ? "Drop here"
                           : filtered
@@ -316,7 +316,7 @@ function TaskCard({
       aria-label={`${t.title}, ${STATUS_META[t.status].label}, assigned to ${t.assigneeName}. Open details`}
       className={cn(
         "bg-card group w-full cursor-pointer rounded-lg border p-3 text-left shadow-xs transition-[box-shadow,border-color,opacity,transform] duration-200",
-        "hover:shadow-lift focus-visible:ring-ring hover:border-primary/35 focus-visible:ring-2 focus-visible:outline-none",
+        "hover:shadow-lift focus-visible:ring-ring hover:border-zinc-300 focus-visible:ring-2 focus-visible:outline-none dark:hover:border-zinc-600",
         t.canUpdate && "active:cursor-grabbing",
         dragging && "scale-[0.98] opacity-50",
       )}

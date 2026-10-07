@@ -1,11 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Kept as a prop for call sites; the minimal palette renders every tone the same.
 const TONES = {
-  indigo: "bg-primary text-primary-foreground",
-  sky: "bg-accent text-accent-foreground",
-  emerald: "bg-secondary text-secondary-foreground",
-  amber: "bg-tertiary-soft text-tertiary",
+  indigo: "bg-secondary text-foreground",
+  sky: "bg-secondary text-foreground",
+  emerald: "bg-secondary text-foreground",
+  amber: "bg-secondary text-foreground",
 } as const;
 
 export function StatCard({

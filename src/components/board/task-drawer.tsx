@@ -766,9 +766,9 @@ function DeleteTask({
       {confirming ? (
         <div
           role="alert"
-          className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+          className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-500/30 dark:bg-red-500/10"
         >
-          <p className="min-w-0 flex-1 text-sm text-red-900">
+          <p className="min-w-0 flex-1 text-sm text-red-900 dark:text-red-300">
             Delete this task and its discussion? This cannot be undone.
           </p>
           <Button
@@ -798,7 +798,7 @@ function DeleteTask({
           variant="outline"
           size="sm"
           onClick={() => setConfirming(true)}
-          className="hover:border-destructive/40 hover:text-destructive hover:bg-red-50"
+          className="hover:border-destructive/40 hover:text-destructive hover:bg-red-50 dark:hover:bg-red-500/10"
         >
           <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete task
         </Button>
