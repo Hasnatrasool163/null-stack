@@ -27,6 +27,10 @@ export type Project = {
   deadline: string;
   /** Number of tasks this particular user is allowed to see. */
   taskCount: number;
+  /** Admin, or the project's own manager: may edit/delete the project and its tasks. */
+  canEdit: boolean;
+  /** Admin only: may hand the project to another manager. */
+  canReassign: boolean;
 };
 
 export const TASK_STATUSES = [
@@ -82,7 +86,7 @@ export type TaskComment = {
   createdAt: string;
 };
 
-export type ProjectDetail = { project: Project; tasks: Task[] };
+export type ProjectDetail = { project: Project; tasks: BoardTask[] };
 
 /** A task shown on /my-tasks, with its project context. */
 export type MyTask = Task & {

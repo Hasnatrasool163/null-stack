@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import {
   boardKeys,
+  deleteTask,
   fetchComments,
   patchTask,
   postComment,
@@ -49,11 +50,14 @@ export function TaskDrawer({
   developers,
   today,
   onClose,
+  onChanged,
 }: {
   task: BoardTask | null;
   developers: Person[];
   today: string;
   onClose: () => void;
+  /** Called after any successful change, e.g. to refresh a server-rendered page. */
+  onChanged?: () => void;
 }) {
   return (
     <Dialog.Root open={!!task} onOpenChange={(o) => !o && onClose()}>
@@ -69,6 +73,8 @@ export function TaskDrawer({
               task={task}
               developers={developers}
               today={today}
+              onChanged={onChanged}
+              onDeleted={onClose}
             />
           )}
         </Dialog.Content>
@@ -77,7 +83,7 @@ export function TaskDrawer({
   );
 }
 
-function useTaskUpdate(taskId: string) {
+function useTaskUpdate(taskId: string, onChanged?: () => void) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (u: TaskUpdate) => patchTask(taskId, u),
@@ -85,6 +91,7 @@ function useTaskUpdate(taskId: string) {
       qc.setQueryData<BoardTask[]>(boardKeys.tasks, (old) =>
         old?.map((t) => (t.id === task.id ? task : t)),
       );
+      onChanged?.();
     },
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Could not save."),
@@ -95,13 +102,17 @@ function DrawerBody({
   task,
   developers,
   today,
+  onChanged,
+  onDeleted,
 }: {
   task: BoardTask;
   developers: Person[];
   today: string;
+  onChanged?: () => void;
+  onDeleted: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const update = useTaskUpdate(task.id);
+  const update = useTaskUpdate(task.id, onChanged);
 
   return (
     <>
@@ -184,6 +195,15 @@ function DrawerBody({
             saving={update.isPending}
           />
           <Thread task={task} />
+          {task.canEdit && (
+            <DeleteTask
+              task={task}
+              onDeleted={() => {
+                onDeleted();
+                onChanged?.();
+              }}
+            />
+          )}
         </div>
       </div>
     </>
@@ -709,6 +729,80 @@ function Thread({ task }: { task: BoardTask }) {
       >
         View project <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
       </Link>
+    </section>
+  );
+}
+
+function DeleteTask({
+  task,
+  onDeleted,
+}: {
+  task: BoardTask;
+  onDeleted: () => void;
+}) {
+  const qc = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const remove = useMutation({
+    mutationFn: () => deleteTask(task.id),
+    onSuccess: () => {
+      qc.setQueryData<BoardTask[]>(boardKeys.tasks, (old) =>
+        old?.filter((t) => t.id !== task.id),
+      );
+      toast.success("Task deleted");
+      onDeleted();
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete."),
+  });
+
+  return (
+    <section aria-labelledby="danger-heading" className="border-t pt-5">
+      <h3
+        id="danger-heading"
+        className="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase"
+      >
+        Danger zone
+      </h3>
+      {confirming ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+        >
+          <p className="min-w-0 flex-1 text-sm text-red-900">
+            Delete this task and its discussion? This cannot be undone.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirming(false)}
+            disabled={remove.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => remove.mutate()}
+            disabled={remove.isPending}
+          >
+            {remove.isPending ? (
+              <Spinner />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            )}{" "}
+            Delete task
+          </Button>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setConfirming(true)}
+          className="hover:border-destructive/40 hover:text-destructive hover:bg-red-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete task
+        </Button>
+      )}
     </section>
   );
 }

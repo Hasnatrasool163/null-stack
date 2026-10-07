@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   Check,
   CheckCircle2,
   FileText,
+  FileUp,
   Info,
   Sparkles,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea, Label } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/misc";
 import { MAX_TRANSCRIPT_CHARS } from "@/lib/schemas";
+import { readTranscriptFile, TRANSCRIPT_ACCEPT } from "@/lib/transcript-file";
 import type { CreatedProject, DraftError, MeetingInsights } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -110,6 +112,26 @@ function Progress() {
 export function TranscriptForm({ sample }: { sample: string | null }) {
   const [text, setText] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
+  const [dragging, setDragging] = useState(false);
+  const [loadedFile, setLoadedFile] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  async function loadFile(file: File | undefined) {
+    if (!file || state.kind === "pending") return;
+    const result = await readTranscriptFile(file);
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    setText(result.text);
+    setLoadedFile(result.name);
+    setState({ kind: "idle" });
+    toast.success(
+      result.cleaned
+        ? `Loaded ${result.name} (timestamps removed)`
+        : `Loaded ${result.name}`,
+    );
+  }
   const pending = state.kind === "pending";
   const nearLimit = text.length > MAX_TRANSCRIPT_CHARS * 0.9;
 
@@ -189,35 +211,121 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
               <FileText className="text-primary h-4 w-4" aria-hidden />
               Meeting transcript
             </Label>
-            {sample !== null && (
+            <div className="flex flex-wrap items-center gap-1">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 disabled={pending}
-                onClick={() => setText(sample)}
+                onClick={() => fileInput.current?.click()}
               >
-                Load sample transcript
+                <FileUp className="h-4 w-4" aria-hidden /> Upload file
               </Button>
+              {sample !== null && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => {
+                    setText(sample);
+                    setLoadedFile(null);
+                  }}
+                >
+                  Load sample transcript
+                </Button>
+              )}
+            </div>
+          </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={TRANSCRIPT_ACCEPT}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden
+            onChange={(e) => {
+              void loadFile(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          <div
+            className="relative"
+            onDragEnter={(e) => {
+              if (pending || !e.dataTransfer.types.includes("Files")) return;
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragOver={(e) => {
+              if (pending || !e.dataTransfer.types.includes("Files")) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node))
+                setDragging(false);
+            }}
+            onDrop={(e) => {
+              if (!e.dataTransfer.files.length) return;
+              e.preventDefault();
+              setDragging(false);
+              void loadFile(e.dataTransfer.files[0]);
+            }}
+          >
+            <Textarea
+              id="transcript"
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                if (!e.target.value) setLoadedFile(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  void submit();
+                }
+              }}
+              maxLength={MAX_TRANSCRIPT_CHARS}
+              disabled={pending}
+              aria-describedby="transcript-help transcript-count"
+              aria-invalid={state.kind === "error" || undefined}
+              placeholder="Paste the meeting transcript here, or drop a .txt, .md, .vtt or .srt file..."
+              className="bg-muted/30 min-h-[22rem] font-mono text-[13px]"
+            />
+            {!text && !dragging && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => fileInput.current?.click()}
+                  disabled={pending}
+                  className="border-input bg-card text-muted-foreground hover:border-primary/40 hover:text-primary focus-visible:ring-ring pointer-events-auto inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-dashed px-4 text-sm font-medium shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                >
+                  <FileUp className="h-4 w-4" aria-hidden />
+                  Drop a file or browse
+                </button>
+              </div>
+            )}
+            {dragging && (
+              <div
+                aria-hidden
+                className="border-primary bg-accent/85 text-accent-foreground animate-fade-in pointer-events-none absolute inset-0 grid place-items-center rounded-lg border-2 border-dashed backdrop-blur-[1px]"
+              >
+                <div className="text-center">
+                  <FileUp className="mx-auto h-8 w-8" aria-hidden />
+                  <p className="mt-2 font-semibold">Drop the transcript file</p>
+                  <p className="text-sm opacity-80">.txt, .md, .vtt or .srt</p>
+                </div>
+              </div>
             )}
           </div>
-          <Textarea
-            id="transcript"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                void submit();
-              }
-            }}
-            maxLength={MAX_TRANSCRIPT_CHARS}
-            disabled={pending}
-            aria-describedby="transcript-help transcript-count"
-            aria-invalid={state.kind === "error" || undefined}
-            placeholder="Paste the meeting transcript here..."
-            className="bg-muted/30 min-h-[22rem] font-mono text-[13px]"
-          />
+          {loadedFile && (
+            <p className="text-muted-foreground -mt-1 inline-flex items-center gap-1.5 text-xs">
+              <FileText className="h-3.5 w-3.5" aria-hidden />
+              Loaded from{" "}
+              <span className="text-foreground font-medium">{loadedFile}</span>.
+              You can still edit it below.
+            </p>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p id="transcript-help" className="text-muted-foreground text-xs">
               Press{" "}

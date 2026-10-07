@@ -98,6 +98,30 @@ export const TaskPatch = z
   .partial()
   .strict();
 
+const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
+
+/** Project edits. managerId is honoured for admins only. */
+export const ProjectPatch = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").max(200),
+    clientName: z.string().trim().min(1, "Client is required").max(200),
+    description: z.string().trim().max(4000),
+    deadline: ymd,
+    managerId: z.string().trim().min(1).max(40),
+  })
+  .partial()
+  .strict();
+
+export const TaskCreate = z
+  .object({
+    title: z.string().trim().min(1, "Title is required").max(200),
+    description: z.string().trim().max(4000).default(""),
+    assigneeId: z.string().trim().min(1, "Choose a developer").max(40),
+    deadline: ymd,
+    estimatedHours: z.number().positive("Hours must be more than 0").max(1000),
+  })
+  .strict();
+
 export const CommentRequest = z.object({
   body: z.string().trim().min(1).max(2000),
 });

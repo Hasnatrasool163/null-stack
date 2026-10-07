@@ -1,4 +1,10 @@
-import type { BoardTask, TaskComment, TaskLink, TaskStatus } from "@/lib/types";
+import type {
+  BoardTask,
+  Project,
+  TaskComment,
+  TaskLink,
+  TaskStatus,
+} from "@/lib/types";
 
 export type TaskUpdate = Partial<{
   status: TaskStatus;
@@ -56,4 +62,56 @@ export async function postComment(
     body: JSON.stringify({ body }),
   });
   return (await json<{ comment: TaskComment }>(res)).comment;
+}
+
+export type NewTask = {
+  title: string;
+  description: string;
+  assigneeId: string;
+  deadline: string;
+  estimatedHours: number;
+};
+
+export async function createTask(
+  projectId: string,
+  task: NewTask,
+): Promise<BoardTask> {
+  const res = await fetch(`/api/projects/${projectId}/tasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(task),
+  });
+  return (await json<{ task: BoardTask }>(res)).task;
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  await json<{ deleted: string }>(
+    await fetch(`/api/tasks/${id}`, { method: "DELETE" }),
+  );
+}
+
+export type ProjectUpdate = Partial<{
+  name: string;
+  clientName: string;
+  description: string;
+  deadline: string;
+  managerId: string;
+}>;
+
+export async function patchProject(
+  id: string,
+  update: ProjectUpdate,
+): Promise<Project> {
+  const res = await fetch(`/api/projects/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(update),
+  });
+  return (await json<{ project: Project }>(res)).project;
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await json<{ deleted: string }>(
+    await fetch(`/api/projects/${id}`, { method: "DELETE" }),
+  );
 }

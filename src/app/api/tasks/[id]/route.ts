@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTaskById, updateTask } from "@/lib/access";
+import { deleteTask, getTaskById, updateTask } from "@/lib/access";
 import { TaskPatch } from "@/lib/schemas";
 import { getCurrentUser } from "@/lib/session";
 
@@ -39,4 +39,20 @@ export async function PATCH(req: Request, ctx: Ctx) {
     );
   }
   return NextResponse.json({ task: result.task });
+}
+
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+  const { id } = await ctx.params;
+  const result = await deleteTask(user, id);
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.message },
+      { status: result.status },
+    );
+  }
+  return NextResponse.json({ deleted: result.value.id });
 }

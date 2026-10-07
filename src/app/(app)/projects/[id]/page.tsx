@@ -10,12 +10,15 @@ import {
   Users,
 } from "lucide-react";
 import { DueBadge } from "@/components/due-badge";
-import { TaskTable } from "@/components/task-table";
+import { AddTaskDialog } from "@/components/project/add-task-dialog";
+import { ProjectActions } from "@/components/project/project-actions";
+import { ProjectTasks } from "@/components/project/project-tasks";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/misc";
 import { getProjectById } from "@/lib/access";
 import { formatDate, formatHours, todayYmd } from "@/lib/format";
 import { requireUser } from "@/lib/session";
+import { getTeam } from "@/lib/team";
 
 export const metadata: Metadata = { title: "Project | NullToPlan" };
 
@@ -48,12 +51,25 @@ export default async function ProjectDetailPage({
 }) {
   const user = await requireUser();
   const { id } = await params;
-  const detail = await getProjectById(user, id);
+  const [detail, team] = await Promise.all([
+    getProjectById(user, id),
+    getTeam(),
+  ]);
   if (!detail) notFound();
+  const pick = (role: string) =>
+    team
+      .filter((m) => m.role === role)
+      .map((m) => ({ id: m.id, name: m.name }));
+  const developers = pick("AGENT");
+  const managers = pick("MANAGER");
   const { project, tasks } = detail;
   const today = todayYmd();
   const hours = tasks.reduce((n, t) => n + t.estimatedHours, 0);
   const people = new Set(tasks.map((t) => t.assigneeId)).size;
+  const latestTaskDeadline = tasks.reduce<string | null>(
+    (max, t) => (!max || t.deadline > max ? t.deadline : max),
+    null,
+  );
 
   return (
     <div className="space-y-8">
@@ -74,11 +90,20 @@ export default async function ProjectDetailPage({
           className="via-primary/40 pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent"
         />
         <div className="relative p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-              {project.clientName}
-            </span>
-            <DueBadge deadline={project.deadline} today={today} />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                {project.clientName}
+              </span>
+              <DueBadge deadline={project.deadline} today={today} />
+            </div>
+            {project.canEdit && (
+              <ProjectActions
+                project={project}
+                managers={managers}
+                latestTaskDeadline={latestTaskDeadline}
+              />
+            )}
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
             {project.name}
@@ -124,25 +149,43 @@ export default async function ProjectDetailPage({
       </section>
 
       <section aria-labelledby="tasks-heading" className="space-y-4">
-        <h2
-          id="tasks-heading"
-          className="flex items-center gap-2 text-lg font-semibold tracking-tight"
-        >
-          <ListChecks className="text-muted-foreground h-5 w-5" aria-hidden />
-          Tasks
-          <span className="bg-secondary text-muted-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
-            {tasks.length}
-          </span>
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2
+            id="tasks-heading"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight"
+          >
+            <ListChecks className="text-muted-foreground h-5 w-5" aria-hidden />
+            Tasks
+            <span className="bg-secondary text-muted-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+              {tasks.length}
+            </span>
+          </h2>
+          {project.canEdit && (
+            <AddTaskDialog
+              projectId={project.id}
+              projectDeadline={project.deadline}
+              developers={developers}
+            />
+          )}
+        </div>
+        {tasks.length > 0 && (
+          <p className="text-muted-foreground -mt-2 text-sm">
+            {project.canEdit
+              ? "Select a task to edit it, reassign the developer, change the timeline or delete it."
+              : "Select a task to see its details and discussion."}
+          </p>
+        )}
         {tasks.length === 0 ? (
           <EmptyState
             icon={<ListChecks className="h-5 w-5" aria-hidden />}
             title="No tasks to show"
           >
-            This project has no tasks you can see.
+            {project.canEdit
+              ? "Add the first task to get this project moving."
+              : "This project has no tasks you can see."}
           </EmptyState>
         ) : (
-          <TaskTable tasks={tasks} today={today} />
+          <ProjectTasks tasks={tasks} developers={developers} today={today} />
         )}
       </section>
     </div>

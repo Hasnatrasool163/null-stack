@@ -1,7 +1,7 @@
 import { query } from "@/lib/db";
 import { randomUUID } from "node:crypto";
 import type { z } from "zod";
-import type { TaskPatch } from "@/lib/schemas";
+import type { ProjectPatch, TaskCreate, TaskPatch } from "@/lib/schemas";
 import type {
   AgendaItem,
   BoardTask,
@@ -55,7 +55,7 @@ type ProjectRow = {
   task_count: number;
 };
 
-function toProject(r: ProjectRow): Project {
+function toProject(r: ProjectRow, user: SessionUser): Project {
   return {
     id: r.id,
     name: r.name,
@@ -65,6 +65,10 @@ function toProject(r: ProjectRow): Project {
     managerName: r.manager_name,
     deadline: r.deadline,
     taskCount: r.task_count,
+    canEdit:
+      user.role === "ADMIN" ||
+      (user.role === "MANAGER" && r.manager_id === user.id),
+    canReassign: user.role === "ADMIN",
   };
 }
 
@@ -90,7 +94,7 @@ async function queryProjects(
       ORDER BY p.deadline, p.name`,
     params,
   );
-  return rows.map(toProject);
+  return rows.map((r) => toProject(r, user));
 }
 
 export function getProjects(user: SessionUser): Promise<Project[]> {
@@ -189,7 +193,7 @@ async function selectTasks(
 export function getTasks(
   user: SessionUser,
   projectId: string,
-): Promise<Task[]> {
+): Promise<BoardTask[]> {
   return selectTasks(user, "t.project_id = $2", [projectId]);
 }
 
@@ -290,6 +294,11 @@ export async function updateTask(
         message: "Tasks can only be assigned to a developer.",
       };
     }
+  }
+
+  if (patch.deadline !== undefined) {
+    const problem = await taskDeadlineProblem(task.projectId, patch.deadline);
+    if (problem) return { ok: false, status: 400, message: problem };
   }
 
   const sets: string[] = [];
@@ -422,4 +431,213 @@ export async function getMeetings(
     projectIds: r.project_ids,
     saved: r.saved,
   }));
+}
+
+// ---- Project and task management (admin, or the project's own manager) ----
+
+export type MutationOutcome<T> =
+  | { ok: true; value: T }
+  | { ok: false; status: 400 | 403 | 404; message: string };
+
+function isRealDate(value: string): boolean {
+  const [y, m, d] = value.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y &&
+    dt.getUTCMonth() === m - 1 &&
+    dt.getUTCDate() === d
+  );
+}
+
+/** A task may not be due after its project. Returns a message, or null when fine. */
+async function taskDeadlineProblem(
+  projectId: string,
+  deadline: string,
+): Promise<string | null> {
+  if (!isRealDate(deadline)) return `"${deadline}" is not a valid date.`;
+  const [p] = await query<{ deadline: string }>(
+    "SELECT deadline FROM projects WHERE id = $1",
+    [projectId],
+  );
+  if (p && deadline > p.deadline) {
+    return `The task deadline cannot be after the project deadline (${p.deadline}).`;
+  }
+  return null;
+}
+
+async function hasRole(
+  id: string,
+  role: SessionUser["role"],
+): Promise<boolean> {
+  const [u] = await query<{ role: string }>(
+    "SELECT role FROM users WHERE id = $1",
+    [id],
+  );
+  return u?.role === role;
+}
+
+/** Visible + editable project, or the right error (404 hides existence). */
+async function editableProject(
+  user: SessionUser,
+  id: string,
+): Promise<MutationOutcome<Project>> {
+  const [project] = await queryProjects(user, id);
+  if (!project)
+    return { ok: false, status: 404, message: "Project not found." };
+  if (!project.canEdit) {
+    return {
+      ok: false,
+      status: 403,
+      message: "Only an admin or this project's manager can change it.",
+    };
+  }
+  return { ok: true, value: project };
+}
+
+const PROJECT_COLUMN: Record<keyof z.infer<typeof ProjectPatch>, string> = {
+  name: "name",
+  clientName: "client_name",
+  description: "description",
+  deadline: "deadline",
+  managerId: "manager_id",
+};
+
+/** Edits project details. Only admins may reassign the manager. */
+export async function updateProject(
+  user: SessionUser,
+  id: string,
+  patch: z.infer<typeof ProjectPatch>,
+): Promise<MutationOutcome<Project>> {
+  const found = await editableProject(user, id);
+  if (!found.ok) return found;
+  const project = found.value;
+
+  if (patch.managerId !== undefined && patch.managerId !== project.managerId) {
+    if (!project.canReassign) {
+      return {
+        ok: false,
+        status: 403,
+        message: "Only an admin can change the project manager.",
+      };
+    }
+    if (!(await hasRole(patch.managerId, "MANAGER"))) {
+      return {
+        ok: false,
+        status: 400,
+        message: "Choose a project manager from the team.",
+      };
+    }
+  }
+  if (patch.deadline !== undefined) {
+    if (!isRealDate(patch.deadline)) {
+      return {
+        ok: false,
+        status: 400,
+        message: `"${patch.deadline}" is not a valid date.`,
+      };
+    }
+    const [latest] = await query<{ deadline: string | null }>(
+      "SELECT max(deadline) AS deadline FROM tasks WHERE project_id = $1",
+      [id],
+    );
+    if (latest?.deadline && patch.deadline < latest.deadline) {
+      return {
+        ok: false,
+        status: 400,
+        message: `The project deadline cannot be before its latest task deadline (${latest.deadline}). Move those tasks first.`,
+      };
+    }
+  }
+
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  for (const key of Object.keys(
+    PROJECT_COLUMN,
+  ) as (keyof typeof PROJECT_COLUMN)[]) {
+    const value = patch[key];
+    if (value === undefined) continue;
+    values.push(value);
+    sets.push(`${PROJECT_COLUMN[key]} = $${values.length}`);
+  }
+  if (sets.length > 0) {
+    values.push(id);
+    await query(
+      `UPDATE projects SET ${sets.join(", ")} WHERE id = $${values.length}`,
+      values,
+    );
+  }
+  // Only admins reassign, and they see every project, so the editor can re-read it.
+  const [updated] = await queryProjects(user, id);
+  return updated
+    ? { ok: true, value: updated }
+    : { ok: false, status: 404, message: "Project not found." };
+}
+
+/** Deletes a project with all its tasks and their discussions. */
+export async function deleteProject(
+  user: SessionUser,
+  id: string,
+): Promise<MutationOutcome<{ id: string }>> {
+  const found = await editableProject(user, id);
+  if (!found.ok) return found;
+  await query("DELETE FROM projects WHERE id = $1", [id]);
+  return { ok: true, value: { id } };
+}
+
+/** Adds a task to a project the user manages. */
+export async function createTask(
+  user: SessionUser,
+  projectId: string,
+  data: z.infer<typeof TaskCreate>,
+): Promise<MutationOutcome<BoardTask>> {
+  const found = await editableProject(user, projectId);
+  if (!found.ok) return found;
+  if (!(await hasRole(data.assigneeId, "AGENT"))) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Tasks can only be assigned to a developer.",
+    };
+  }
+  const problem = await taskDeadlineProblem(projectId, data.deadline);
+  if (problem) return { ok: false, status: 400, message: problem };
+
+  const id = randomUUID();
+  await query(
+    `INSERT INTO tasks (id, project_id, title, description, assignee_id, deadline,
+                        estimated_hours, reported_by, updated_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)`,
+    [
+      id,
+      projectId,
+      data.title,
+      data.description,
+      data.assigneeId,
+      data.deadline,
+      data.estimatedHours,
+      user.id,
+    ],
+  );
+  const task = await getTaskById(user, id);
+  return task
+    ? { ok: true, value: task }
+    : { ok: false, status: 404, message: "Task not found." };
+}
+
+/** Deletes a task (and its discussion). Admin or the project's manager only. */
+export async function deleteTask(
+  user: SessionUser,
+  id: string,
+): Promise<MutationOutcome<{ id: string; projectId: string }>> {
+  const task = await getTaskById(user, id);
+  if (!task) return { ok: false, status: 404, message: "Task not found." };
+  if (!task.canEdit) {
+    return {
+      ok: false,
+      status: 403,
+      message: "Only an admin or this project's manager can delete tasks.",
+    };
+  }
+  await query("DELETE FROM tasks WHERE id = $1", [id]);
+  return { ok: true, value: { id, projectId: task.projectId } };
 }

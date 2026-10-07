@@ -70,7 +70,44 @@ function SortHeader({
   );
 }
 
-export function TaskTable({ tasks, today }: { tasks: Task[]; today: string }) {
+/** Task title; a button that opens the task when `onOpen` is given. */
+function TaskTitle({
+  task,
+  onOpen,
+  className,
+}: {
+  task: Task;
+  onOpen?: (id: string) => void;
+  className?: string;
+}) {
+  if (!onOpen)
+    return (
+      <span className={cn("block font-semibold", className)}>{task.title}</span>
+    );
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(task.id)}
+      className={cn(
+        "hover:text-primary focus-visible:ring-ring block cursor-pointer rounded text-left font-semibold transition-colors after:absolute after:inset-0 focus-visible:ring-2 focus-visible:outline-none",
+        className,
+      )}
+    >
+      {task.title}
+    </button>
+  );
+}
+
+export function TaskTable({
+  tasks,
+  today,
+  onOpen,
+}: {
+  tasks: Task[];
+  today: string;
+  /** Makes each row open the task (e.g. in the task drawer). */
+  onOpen?: (id: string) => void;
+}) {
   const [sort, setSort] = useState<Sort>({ key: "deadline", dir: 1 });
   const [grouped, setGrouped] = useState(false);
   const total = tasks.reduce((sum, t) => sum + t.estimatedHours, 0);
@@ -207,10 +244,13 @@ export function TaskTable({ tasks, today }: { tasks: Task[]; today: string }) {
               {g.tasks.map((t) => (
                 <tr
                   key={t.id}
-                  className="hover:bg-muted/40 align-top transition-colors"
+                  className={cn(
+                    "hover:bg-muted/40 align-top transition-colors",
+                    onOpen && "relative cursor-pointer",
+                  )}
                 >
                   <th scope="row" className="max-w-md px-5 py-4 font-normal">
-                    <span className="block font-semibold">{t.title}</span>
+                    <TaskTitle task={t} onOpen={onOpen} />
                     <span className="text-muted-foreground mt-1 block leading-relaxed">
                       {t.description || "No description."}
                     </span>
@@ -270,10 +310,14 @@ export function TaskTable({ tasks, today }: { tasks: Task[]; today: string }) {
               {g.tasks.map((t) => (
                 <li
                   key={t.id}
-                  className="bg-card shadow-card rounded-xl border p-4"
+                  className={cn(
+                    "bg-card shadow-card rounded-xl border p-4",
+                    onOpen &&
+                      "hover:border-primary/35 relative transition-colors",
+                  )}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <p className="font-semibold">{t.title}</p>
+                    <TaskTitle task={t} onOpen={onOpen} />
                     <span className="bg-secondary shrink-0 rounded-md border px-2 py-0.5 text-xs font-semibold tabular-nums">
                       {formatHours(t.estimatedHours)}
                     </span>
