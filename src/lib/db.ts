@@ -101,7 +101,9 @@ export async function migrate(): Promise<string[]> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock($1)", [MIGRATION_LOCK_KEY]);
+    await client.query("SELECT pg_advisory_xact_lock($1)", [
+      MIGRATION_LOCK_KEY,
+    ]);
     await client.query(
       `CREATE TABLE IF NOT EXISTS schema_migrations (
          id text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`,
@@ -114,7 +116,9 @@ export async function migrate(): Promise<string[]> {
     for (const m of MIGRATIONS) {
       if (done.has(m.id)) continue;
       await client.query(m.sql);
-      await client.query("INSERT INTO schema_migrations (id) VALUES ($1)", [m.id]);
+      await client.query("INSERT INTO schema_migrations (id) VALUES ($1)", [
+        m.id,
+      ]);
       applied.push(m.id);
     }
     await client.query("COMMIT");

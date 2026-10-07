@@ -8,26 +8,26 @@ export const STATUS_META: Record<
   TODO: {
     label: "To do",
     dot: "bg-slate-400",
-    badge: "bg-slate-100 text-slate-700 ring-1 ring-slate-500/15",
-    column: "bg-slate-100/70",
+    badge: "bg-secondary text-secondary-foreground ring-1 ring-slate-500/15",
+    column: "bg-secondary/60",
   },
   IN_PROGRESS: {
     label: "In progress",
-    dot: "bg-sky-500",
-    badge: "bg-sky-50 text-sky-700 ring-1 ring-sky-600/15",
-    column: "bg-sky-50/70",
+    dot: "bg-primary",
+    badge: "bg-accent text-accent-foreground ring-1 ring-primary/15",
+    column: "bg-accent/35",
   },
   IN_REVIEW: {
     label: "In review",
-    dot: "bg-amber-500",
-    badge: "bg-amber-50 text-amber-800 ring-1 ring-amber-600/20",
-    column: "bg-amber-50/60",
+    dot: "bg-tertiary",
+    badge: "bg-tertiary-soft text-tertiary ring-1 ring-tertiary/20",
+    column: "bg-tertiary-soft/45",
   },
   DONE: {
     label: "Done",
-    dot: "bg-emerald-500",
-    badge: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15",
-    column: "bg-emerald-50/60",
+    dot: "bg-primary-strong",
+    badge: "bg-primary text-primary-foreground",
+    column: "bg-primary/[0.06]",
   },
 };
 

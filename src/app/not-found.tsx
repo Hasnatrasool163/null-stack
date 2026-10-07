@@ -6,10 +6,10 @@ export default function NotFound() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="animate-fade-up flex max-w-md flex-col items-center text-center">
-        <span className="bg-secondary text-foreground mb-5 grid h-14 w-14 place-items-center rounded-2xl border">
+        <span className="bg-accent text-primary mb-5 grid h-14 w-14 place-items-center rounded-2xl">
           <SearchX className="h-7 w-7" aria-hidden />
         </span>
-        <p className="text-muted-foreground text-sm font-medium">404</p>
+        <p className="text-primary text-sm font-semibold">404</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           Page not found
         </h1>

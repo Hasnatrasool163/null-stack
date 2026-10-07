@@ -55,7 +55,7 @@ export function MeetingInsightsPanel({
               const k = KIND[a.kind];
               return (
                 <li key={`${a.topic}-${i}`} className="flex gap-3">
-                  <span className="bg-secondary text-foreground grid h-6 w-6 shrink-0 place-items-center rounded-md border text-xs font-semibold tabular-nums">
+                  <span className="bg-accent text-accent-foreground grid h-6 w-6 shrink-0 place-items-center rounded-md text-xs font-semibold tabular-nums">
                     {i + 1}
                   </span>
                   <div className="min-w-0 text-sm">

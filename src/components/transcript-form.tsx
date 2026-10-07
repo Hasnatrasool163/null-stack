@@ -56,10 +56,10 @@ function Progress() {
       aria-live="polite"
     >
       <div className="flex items-center gap-3">
-        <span className="bg-foreground text-background relative grid h-10 w-10 place-items-center rounded-lg">
+        <span className="bg-primary text-primary-foreground relative grid h-10 w-10 place-items-center rounded-lg">
           <Sparkles className="h-5 w-5" aria-hidden />
           <span
-            className="bg-foreground/20 absolute inset-0 animate-ping rounded-lg"
+            className="bg-primary/25 absolute inset-0 animate-ping rounded-lg"
             aria-hidden
           />
         </span>
@@ -79,8 +79,8 @@ function Progress() {
               <span
                 className={cn(
                   "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors duration-300",
-                  done && "border-foreground bg-foreground text-background",
-                  active && "border-foreground text-foreground",
+                  done && "border-primary bg-primary text-primary-foreground",
+                  active && "border-primary text-primary",
                   !done && !active && "text-muted-foreground",
                 )}
               >
@@ -186,7 +186,7 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
               htmlFor="transcript"
               className="inline-flex items-center gap-2"
             >
-              <FileText className="text-muted-foreground h-4 w-4" aria-hidden />
+              <FileText className="text-primary h-4 w-4" aria-hidden />
               Meeting transcript
             </Label>
             {sample !== null && (
@@ -275,7 +275,7 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
                   "You also get a summary, open questions and a suggested agenda for the next meeting.",
                 ].map((s, i) => (
                   <li key={s} className="flex gap-3">
-                    <span className="bg-secondary text-foreground grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-semibold">
+                    <span className="bg-accent text-accent-foreground grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold">
                       {i + 1}
                     </span>
                     {s}

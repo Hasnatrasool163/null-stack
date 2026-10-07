@@ -30,7 +30,7 @@ function Fact({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="bg-secondary text-foreground grid h-9 w-9 shrink-0 place-items-center rounded-lg border">
+      <span className="bg-accent text-accent-foreground grid h-9 w-9 shrink-0 place-items-center rounded-lg">
         {icon}
       </span>
       <div className="min-w-0">
@@ -71,7 +71,7 @@ export default async function ProjectDetailPage({
       <section className="bg-card shadow-card animate-fade-up relative overflow-hidden rounded-2xl border">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-300 to-transparent"
+          className="via-primary/40 pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent"
         />
         <div className="relative p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
