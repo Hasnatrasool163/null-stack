@@ -5,10 +5,8 @@ NullToPlan turns a meeting transcript into a saved project plan. An admin pastes
 ## Team
 - Team name: Null Stack
 - Members and responsibilities:
-  - Hamad Jamil - TODO: responsibilities
-  - Muhammad Hasnat Rasool - TODO: responsibilities
-  - TODO: third member - responsibilities
-  - TODO: fourth member - responsibilities
+  - Hamad Jamil - PM
+  - Muhammad Hasnat Rasool - Developer
 - Repository: https://github.com/Hasnatrasool163/null-stack
 
 ## What Works
