@@ -2,8 +2,6 @@
 
 NullToPlan turns a meeting transcript into a saved project plan. An admin pastes or drops a transcript; the AI checks that it is about technical work, extracts projects, tasks, owners, deadlines and estimated hours, validates every value against the team directory, and saves everything in one transaction. It also writes a meeting summary, open questions and a suggested agenda for the next meeting. Managers and developers then work from role-scoped views: a dashboard, a Kanban board with a discussion thread on every task, and editable project pages.
 
-Why we built it this way is in [docs/DECISIONS.md](docs/DECISIONS.md).
-
 ## Team
 - Team name: Null Stack
 - Members and responsibilities:
