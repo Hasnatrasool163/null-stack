@@ -34,7 +34,7 @@ Not done / partial: see [Known Limitations](#known-limitations).
 - Frontend: Next.js 16.4 (App Router, React 19.3, Server Components), Tailwind CSS 4, Radix UI primitives, TanStack Query 5, lucide icons
 - Backend: Next.js route handlers on Node.js 24 (TypeScript 5), zod 4 for request validation
 - Database: PostgreSQL (managed, Aiven) via `pg` 8, plain parameterised SQL, versioned migrations in `src/lib/db.ts`
-- AI: Google Gemini `gemini-2.5-flash` (primary) with OpenRouter `gpt-4o-mini` as fallback, called through the OpenAI-compatible SDK; JSON output validated with zod
+- AI: Google Gemini `gemini-2.8-flash` (primary) with OpenRouter `gpt-4o-mini` as fallback, called through the OpenAI-compatible SDK; JSON output validated with zod
 - Authentication/session: email + password (bcrypt hashes) -> HS256-signed JWT in an http-only, SameSite=Lax cookie (8 h). Every request verifies the cookie and reloads the user and role from the database; the client never supplies an id or role.
 
 ## Links
