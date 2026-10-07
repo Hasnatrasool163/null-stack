@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 
 // Neutral greys: enough variation to tell people apart without adding colour.
 const TONES = [
-  "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100",
-  "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-100",
+  "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200",
+  "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-200",
   "bg-neutral-300 text-neutral-800 dark:bg-neutral-600 dark:text-neutral-50",
-  "bg-zinc-800 text-zinc-50 dark:bg-zinc-200 dark:text-zinc-900",
+  "bg-zinc-800 text-zinc-50 dark:bg-zinc-500 dark:text-zinc-50",
   "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-200",
 ];
 
