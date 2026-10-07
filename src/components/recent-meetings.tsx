@@ -1,4 +1,5 @@
-import { ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { MeetingInsightsPanel } from "@/components/meeting-insights";
 import { formatDateTime } from "@/lib/task-meta";
 import type { Meeting } from "@/lib/types";
@@ -8,9 +9,20 @@ export function RecentMeetings({ meetings }: { meetings: Meeting[] }) {
   if (meetings.length === 0) return null;
   return (
     <section aria-labelledby="recent-meetings" className="space-y-3">
-      <h2 id="recent-meetings" className="text-lg font-semibold tracking-tight">
-        Recent meetings
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2
+          id="recent-meetings"
+          className="text-lg font-semibold tracking-tight"
+        >
+          Recent meetings
+        </h2>
+        <Link
+          href="/admin/transcript/history"
+          className="text-muted-foreground hover:text-foreground inline-flex min-h-9 items-center gap-1 text-sm font-medium transition-colors"
+        >
+          View all history <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
       <ul className="space-y-2">
         {meetings.map((m) => (
           <li key={m.id}>

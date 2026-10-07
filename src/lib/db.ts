@@ -93,6 +93,15 @@ CREATE TABLE IF NOT EXISTS meetings (
 ALTER TABLE meetings ADD COLUMN IF NOT EXISTS transcript_hash text;
 CREATE INDEX IF NOT EXISTS meetings_transcript_hash_idx ON meetings(transcript_hash);`,
   },
+  {
+    id: "006_meeting_history",
+    sql: `
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS transcript text NOT NULL DEFAULT '';
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS outcome text NOT NULL DEFAULT 'SAVED';
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS errors jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS source_name text;
+CREATE INDEX IF NOT EXISTS meetings_created_idx ON meetings(created_at DESC);`,
+  },
 ];
 
 // Arbitrary constant: every instance takes the same lock, so only one migrates at a time.

@@ -133,12 +133,29 @@ export type MeetingInsights = {
   agenda: AgendaItem[];
 };
 
+export type MeetingOutcome = "SAVED" | "NOT_RELEVANT" | "INVALID" | "REPLACED";
+
 export type Meeting = MeetingInsights & {
   id: string;
   createdAt: string;
   createdByName: string;
   saved: boolean;
   projectIds: string[];
+};
+
+/** One row of the transcript history (every analysis, saved or not). */
+export type MeetingHistoryItem = Meeting & {
+  outcome: MeetingOutcome;
+  sourceName: string | null;
+  charCount: number;
+  /** Projects from this run that still exist. */
+  liveProjectCount: number;
+};
+
+export type MeetingDetail = MeetingHistoryItem & {
+  transcript: string;
+  errors: DraftError[];
+  projects: { id: string; name: string; taskCount: number }[];
 };
 
 /** An earlier analysis of the same transcript, offered for replace / keep both. */

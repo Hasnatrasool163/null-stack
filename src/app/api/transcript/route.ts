@@ -45,6 +45,7 @@ export async function POST(req: Request) {
     user,
     parsed.data.transcript,
     parsed.data.onDuplicate,
+    parsed.data.sourceName,
   );
   if (result.ok) return NextResponse.json(result);
   return NextResponse.json(

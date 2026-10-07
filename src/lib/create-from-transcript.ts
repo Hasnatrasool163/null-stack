@@ -212,6 +212,45 @@ async function findDuplicate(hash: string): Promise<DuplicateMeeting | null> {
   };
 }
 
+type TranscriptSource = { transcript: string; sourceName: string | null };
+
+/**
+ * Records an analysis that saved nothing (not relevant / needs fixes) so it
+ * still shows in the transcript history. Best effort: never blocks the reply.
+ */
+async function recordUnsaved(
+  user: SessionUser,
+  outcome: "NOT_RELEVANT" | "INVALID",
+  insights: MeetingInsights,
+  errors: DraftError[],
+  hash: string,
+  source: TranscriptSource,
+): Promise<void> {
+  try {
+    await query(
+      `INSERT INTO meetings (id, created_by, title, category, summary, open_questions, agenda,
+                             saved, transcript_hash, transcript, source_name, outcome, errors)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,false,$8,$9,$10,$11,$12)`,
+      [
+        randomUUID(),
+        user.id,
+        insights.title,
+        insights.category,
+        insights.summary,
+        JSON.stringify(insights.openQuestions),
+        JSON.stringify(insights.agenda),
+        hash,
+        source.transcript,
+        source.sourceName,
+        outcome,
+        JSON.stringify(errors),
+      ],
+    );
+  } catch {
+    // History is a convenience; the user still gets their result.
+  }
+}
+
 async function saveDraft(
   draft: Draft,
   insights: MeetingInsights,
@@ -219,6 +258,7 @@ async function saveDraft(
   names: Map<string, string>,
   hash: string,
   replace: DuplicateMeeting | null,
+  source: TranscriptSource,
 ): Promise<{ projects: CreatedProject[]; meetingId: string }> {
   return withTransaction(async (client) => {
     // Replace: remove the earlier run's projects (tasks and threads cascade)
@@ -227,9 +267,11 @@ async function saveDraft(
       await client.query("DELETE FROM projects WHERE id = ANY($1)", [
         replace.projects.map((p) => p.id),
       ]);
-      await client.query("DELETE FROM meetings WHERE id = $1", [
-        replace.meetingId,
-      ]);
+      // Kept for the history page, but no longer offered as a duplicate.
+      await client.query(
+        "UPDATE meetings SET saved = false, outcome = 'REPLACED' WHERE id = $1",
+        [replace.meetingId],
+      );
     }
     const created: CreatedProject[] = [];
     for (const p of draft.projects) {
@@ -282,8 +324,8 @@ async function saveDraft(
     const meetingId = randomUUID();
     await client.query(
       `INSERT INTO meetings (id, created_by, title, category, summary, open_questions, agenda,
-                             project_ids, saved, transcript_hash)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9)`,
+                             project_ids, saved, transcript_hash, transcript, source_name, outcome)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9,$10,$11,'SAVED')`,
       [
         meetingId,
         user.id,
@@ -294,6 +336,8 @@ async function saveDraft(
         JSON.stringify(insights.agenda),
         created.map((c) => c.id),
         hash,
+        source.transcript,
+        source.sourceName,
       ],
     );
     return { projects: created, meetingId };
@@ -311,7 +355,12 @@ export async function createFromTranscript(
   user: SessionUser,
   transcript: string,
   onDuplicate?: "replace" | "keep",
+  sourceName?: string,
 ): Promise<CreateOutcome> {
+  const source: TranscriptSource = {
+    transcript,
+    sourceName: sourceName ?? null,
+  };
   if (user.role !== "ADMIN") {
     return fail(
       403,
@@ -372,19 +421,29 @@ export async function createFromTranscript(
     try {
       draft = await structured(Draft, messages, AI_OPTIONS);
       if (!draft.relevance.isRelevant) {
+        const notRelevant: DraftError[] = [
+          {
+            where: draft.relevance.category.trim() || "Transcript",
+            message:
+              draft.relevance.reason.trim() ||
+              "This meeting does not discuss software, IT or technical work, so no tasks were created.",
+          },
+        ];
+        const insights = toInsights(draft);
+        await recordUnsaved(
+          user,
+          "NOT_RELEVANT",
+          insights,
+          notRelevant,
+          hash,
+          source,
+        );
         return {
           ok: false,
           status: 422,
           reason: "NOT_RELEVANT",
-          errors: [
-            {
-              where: draft.relevance.category.trim() || "Transcript",
-              message:
-                draft.relevance.reason.trim() ||
-                "This meeting does not discuss software, IT or technical work, so no tasks were created.",
-            },
-          ],
-          insights: toInsights(draft),
+          errors: notRelevant,
+          insights,
         };
       }
       errors = validateDraft(draft, roles);
@@ -417,6 +476,7 @@ export async function createFromTranscript(
 
     const insights = toInsights(draft);
     if (errors.length > 0) {
+      await recordUnsaved(user, "INVALID", insights, errors, hash, source);
       return { ok: false, status: 422, reason: "INVALID", errors, insights };
     }
     try {
@@ -427,6 +487,7 @@ export async function createFromTranscript(
         names,
         hash,
         onDuplicate === "replace" ? duplicate : null,
+        source,
       );
       return { ok: true, insights, ...saved };
     } catch {

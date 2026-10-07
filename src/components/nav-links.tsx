@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FolderKanban,
+  History,
   KanbanSquare,
   ListTodo,
   Sparkles,
@@ -37,6 +38,12 @@ function items(role: Role): NavItem[] {
       icon: Sparkles,
       show: role === "ADMIN",
     },
+    {
+      href: "/admin/transcript/history",
+      label: "Transcript history",
+      icon: History,
+      show: role === "ADMIN",
+    },
   ].filter((i) => i.show);
 }
 
@@ -48,10 +55,16 @@ export function NavLinks({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const links = items(role);
+  // Most specific match wins, so /admin/transcript/history doesn't also light up its parent.
+  const activeHref = links
+    .map((l) => l.href)
+    .filter((h) => pathname === h || pathname.startsWith(`${h}/`))
+    .sort((a, b) => b.length - a.length)[0];
   return (
     <ul className="space-y-1">
-      {items(role).map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+      {links.map(({ href, label, icon: Icon }) => {
+        const active = href === activeHref;
         return (
           <li key={href}>
             <Link

@@ -12,6 +12,8 @@ export const TranscriptRequest = z.object({
   transcript: z.string().max(MAX_TRANSCRIPT_CHARS),
   /** What to do when this exact transcript was processed before. */
   onDuplicate: z.enum(["replace", "keep"]).optional(),
+  /** File name when the transcript was dropped/uploaded, for the history list. */
+  sourceName: z.string().trim().max(200).optional(),
 });
 
 export const DraftTask = z.object({

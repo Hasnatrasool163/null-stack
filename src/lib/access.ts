@@ -5,7 +5,11 @@ import type { ProjectPatch, TaskCreate, TaskPatch } from "@/lib/schemas";
 import type {
   AgendaItem,
   BoardTask,
+  DraftError,
   Meeting,
+  MeetingDetail,
+  MeetingHistoryItem,
+  MeetingOutcome,
   MyTask,
   Project,
   ProjectDetail,
@@ -414,7 +418,7 @@ export async function getMeetings(
     `SELECT mt.id, mt.created_at, u.name AS created_by_name, mt.title, mt.category,
             mt.summary, mt.open_questions, mt.agenda, mt.project_ids, mt.saved
        FROM meetings mt JOIN users u ON u.id = mt.created_by
-      WHERE ${where}
+      WHERE mt.saved AND ${where}
       ORDER BY mt.created_at DESC
       LIMIT $2`,
     [user.id, limit],
@@ -431,6 +435,88 @@ export async function getMeetings(
     projectIds: r.project_ids,
     saved: r.saved,
   }));
+}
+
+type HistoryRow = MeetingRow & {
+  outcome: MeetingOutcome;
+  source_name: string | null;
+  char_count: number;
+  live_project_count: number;
+};
+
+const HISTORY_COLUMNS = `mt.id, mt.created_at, u.name AS created_by_name, mt.title, mt.category,
+       mt.summary, mt.open_questions, mt.agenda, mt.project_ids, mt.saved,
+       mt.outcome, mt.source_name, length(mt.transcript)::int AS char_count,
+       (SELECT count(*)::int FROM projects p WHERE p.id = ANY(mt.project_ids)) AS live_project_count`;
+
+function toHistoryItem(r: HistoryRow): MeetingHistoryItem {
+  return {
+    id: r.id,
+    createdAt: new Date(r.created_at).toISOString(),
+    createdByName: r.created_by_name,
+    title: r.title || "Untitled meeting",
+    category: r.category,
+    summary: r.summary,
+    openQuestions: r.open_questions ?? [],
+    agenda: r.agenda ?? [],
+    projectIds: r.project_ids,
+    saved: r.saved,
+    outcome: r.outcome,
+    sourceName: r.source_name,
+    charCount: r.char_count,
+    liveProjectCount: r.live_project_count,
+  };
+}
+
+/** Every transcript analysis, newest first. Admins only (transcripts span all clients). */
+export async function getMeetingHistory(
+  user: SessionUser,
+): Promise<MeetingHistoryItem[]> {
+  if (user.role !== "ADMIN") return [];
+  const rows = await query<HistoryRow>(
+    `SELECT ${HISTORY_COLUMNS}
+       FROM meetings mt JOIN users u ON u.id = mt.created_by
+      ORDER BY mt.created_at DESC
+      LIMIT 200`,
+  );
+  return rows.map(toHistoryItem);
+}
+
+/** One analysis with its original transcript. Null for non-admins or unknown ids. */
+export async function getMeetingDetail(
+  user: SessionUser,
+  id: string,
+): Promise<MeetingDetail | null> {
+  if (user.role !== "ADMIN") return null;
+  const [r] = await query<
+    HistoryRow & { transcript: string; errors: DraftError[] | null }
+  >(
+    `SELECT ${HISTORY_COLUMNS}, mt.transcript, mt.errors
+       FROM meetings mt JOIN users u ON u.id = mt.created_by
+      WHERE mt.id = $1`,
+    [id],
+  );
+  if (!r) return null;
+  const projects = await query<{
+    id: string;
+    name: string;
+    task_count: number;
+  }>(
+    `SELECT p.id, p.name,
+            (SELECT count(*)::int FROM tasks t WHERE t.project_id = p.id) AS task_count
+       FROM projects p WHERE p.id = ANY($1) ORDER BY p.name`,
+    [r.project_ids],
+  );
+  return {
+    ...toHistoryItem(r),
+    transcript: r.transcript,
+    errors: r.errors ?? [],
+    projects: projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      taskCount: p.task_count,
+    })),
+  };
 }
 
 // ---- Project and task management (admin, or the project's own manager) ----

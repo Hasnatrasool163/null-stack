@@ -115,11 +115,22 @@ function Progress() {
   );
 }
 
-export function TranscriptForm({ sample }: { sample: string | null }) {
-  const [text, setText] = useState("");
+export function TranscriptForm({
+  sample,
+  initialText,
+  initialSource,
+}: {
+  sample: string | null;
+  /** Prefill, e.g. when re-running a transcript from the history page. */
+  initialText?: string;
+  initialSource?: string;
+}) {
+  const [text, setText] = useState(initialText ?? "");
   const [state, setState] = useState<State>({ kind: "idle" });
   const [dragging, setDragging] = useState(false);
-  const [loadedFile, setLoadedFile] = useState<string | null>(null);
+  const [loadedFile, setLoadedFile] = useState<string | null>(
+    initialSource ?? null,
+  );
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function loadFile(file: File | undefined) {
@@ -151,7 +162,11 @@ export function TranscriptForm({ sample }: { sample: string | null }) {
       const res = await fetch("/api/transcript", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: text, onDuplicate }),
+        body: JSON.stringify({
+          transcript: text,
+          onDuplicate,
+          sourceName: loadedFile ?? undefined,
+        }),
       });
       const data: unknown = await res.json();
       const body = data as {
