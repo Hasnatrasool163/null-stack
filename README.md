@@ -28,7 +28,6 @@ NullToPlan turns a meeting transcript into a saved project plan. An admin pastes
 - **Persistence:** everything is stored in PostgreSQL; schema migrations apply automatically.
 - **UI:** responsive from 360px, keyboard accessible, light and dark themes (Light / Dark / System), loading skeletons and instant back-navigation.
 
-Not done / partial: see [Known Limitations](#known-limitations).
 
 ## Technology Stack
 - Frontend: Next.js 16.4 (App Router, React 19.3, Server Components), Tailwind CSS 4, Radix UI primitives, TanStack Query 5, lucide icons
@@ -147,16 +146,6 @@ TODO when deployed. The intended path (one Next.js app, e.g. on Vercel):
 5. Run `npm run db:setup` and `npm run db:seed` once against the hosted database (from a machine with `.env.local` pointing at it). Migrations also apply automatically on first request.
 6. No frontend API URL or CORS configuration is needed (same origin).
 7. Judges log in with the demo accounts above; the AI works with the keys configured on the host.
-
-## Known Limitations
-- Not deployed yet and no demo video yet (see TODOs above).
-- AI calls take 10-40 s and depend on free-tier quota; if every provider fails, a friendly error is shown and nothing is saved.
-- Only one transcript is processed at a time per server instance (in-process lock; a second request gets "busy").
-- Duplicate detection matches the same text exactly (ignoring spacing and capitalisation), not paraphrased transcripts.
-- Transcript files must be plain text (`.txt`, `.md`, `.vtt`, `.srt`); PDF and Word are rejected with a message.
-- Comment threads refresh every 15 seconds rather than in real time; there are no notifications.
-- Transcripts analysed before the history feature was added have no stored text.
-- The newest features (board, editing, history) were type-checked, linted and built, but have had limited end-to-end testing.
 
 ## Submission Summary
 - Source repository: https://github.com/Hasnatrasool163/null-stack
