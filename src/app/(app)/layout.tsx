@@ -1,4 +1,5 @@
 import { Nav } from "@/components/nav";
+import { RevalidateOnRevisit } from "@/components/revalidate-on-revisit";
 import { requireUser } from "@/lib/session";
 
 export default async function AppLayout({
@@ -16,6 +17,7 @@ export default async function AppLayout({
         Skip to content
       </a>
       <Nav user={user} />
+      <RevalidateOnRevisit />
       <div className="lg:pl-64">
         <main
           id="main"
