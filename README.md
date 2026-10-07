@@ -37,7 +37,7 @@ NullToPlan turns a meeting transcript into a saved project plan. An admin pastes
 - Authentication/session: email + password (bcrypt hashes) -> HS256-signed JWT in an http-only, SameSite=Lax cookie (8 h). Every request verifies the cookie and reloads the user and role from the database; the client never supplies an id or role.
 
 ## Links
-- Live application: https://null-stack-9lhbd74o4-muhammad-hasnat-rasools-projects.vercel.app
+- Live application: https://null-stack.vercel.app/login
 ## Requirements
 - Node.js 24 or newer (the setup scripts import TypeScript directly) and npm 11
 - A PostgreSQL database (local, or hosted such as Aiven; we use Aiven. TLS is handled automatically for non-local hosts)
