@@ -14,7 +14,10 @@ export const Textarea = ({
   className,
   ...p
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
-  <textarea className={cn(field, "min-h-24 leading-relaxed", className)} {...p} />
+  <textarea
+    className={cn(field, "min-h-24 leading-relaxed", className)}
+    {...p}
+  />
 );
 export const Label = ({
   className,

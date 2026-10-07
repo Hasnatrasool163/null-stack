@@ -1,13 +1,12 @@
 import { cn } from "@/lib/utils";
 
+// Neutral greys: enough variation to tell people apart without adding colour.
 const TONES = [
-  "bg-indigo-100 text-indigo-700",
-  "bg-sky-100 text-sky-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-amber-100 text-amber-800",
-  "bg-rose-100 text-rose-700",
-  "bg-violet-100 text-violet-700",
-  "bg-teal-100 text-teal-700",
+  "bg-zinc-200 text-zinc-800",
+  "bg-stone-200 text-stone-800",
+  "bg-neutral-300 text-neutral-800",
+  "bg-zinc-800 text-zinc-50",
+  "bg-stone-100 text-stone-700 ring-stone-300",
 ];
 
 function initials(name: string): string {
@@ -41,7 +40,7 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        "inline-grid shrink-0 place-items-center rounded-full font-semibold ring-2 ring-white",
+        "ring-card inline-grid shrink-0 place-items-center rounded-full font-semibold ring-2",
         SIZES[size],
         tone(name),
         className,

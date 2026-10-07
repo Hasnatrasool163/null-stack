@@ -49,5 +49,8 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
   if (s < 3600) return `${Math.round(s / 60)} min ago`;
   if (s < 86_400) return `${Math.round(s / 3600)} h ago`;
   if (s < 7 * 86_400) return `${Math.round(s / 86_400)} d ago`;
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
 }

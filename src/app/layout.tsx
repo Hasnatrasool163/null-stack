@@ -5,8 +5,9 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "NovaWorks CRM",
-  description: "Meeting transcripts to projects and tasks, with role-based views.",
+  title: "NullToPlan",
+  description:
+    "From meeting transcript to project plan: AI-generated projects, tasks and next-meeting agendas.",
 };
 
 export default function RootLayout({

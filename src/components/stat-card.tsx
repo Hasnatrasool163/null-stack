@@ -1,11 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Kept as a prop for call sites; the minimal palette renders every tone the same.
 const TONES = {
-  indigo: "bg-indigo-50 text-indigo-600",
-  sky: "bg-sky-50 text-sky-600",
-  emerald: "bg-emerald-50 text-emerald-600",
-  amber: "bg-amber-50 text-amber-700",
+  indigo: "bg-secondary text-foreground",
+  sky: "bg-secondary text-foreground",
+  emerald: "bg-secondary text-foreground",
+  amber: "bg-secondary text-foreground",
 } as const;
 
 export function StatCard({
@@ -27,7 +28,12 @@ export function StatCard({
     <div className="bg-card shadow-card rounded-xl border p-5">
       <div className="flex items-start justify-between gap-3">
         <p className="text-muted-foreground text-sm font-medium">{label}</p>
-        <span className={cn("grid h-9 w-9 place-items-center rounded-lg", TONES[tone])}>
+        <span
+          className={cn(
+            "grid h-9 w-9 place-items-center rounded-lg",
+            TONES[tone],
+          )}
+        >
           <Icon className="h-[18px] w-[18px]" aria-hidden />
         </span>
       </div>
@@ -39,7 +45,11 @@ export function StatCard({
           </span>
         )}
       </p>
-      {hint && <div className="text-muted-foreground mt-1 truncate text-xs">{hint}</div>}
+      {hint && (
+        <div className="text-muted-foreground mt-1 truncate text-xs">
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,12 @@
 import { Clock } from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/misc";
-import { daysUntil, relativeDue, todayYmd, urgency, type Urgency } from "@/lib/format";
+import {
+  daysUntil,
+  relativeDue,
+  todayYmd,
+  urgency,
+  type Urgency,
+} from "@/lib/format";
 
 const TONE: Record<Urgency, BadgeTone> = {
   overdue: "danger",

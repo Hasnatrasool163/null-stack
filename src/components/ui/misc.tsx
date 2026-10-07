@@ -9,7 +9,7 @@ export const Spinner = ({ className }: { className?: string }) => (
 export const Skeleton = ({ className }: { className?: string }) => (
   <div
     className={cn(
-      "animate-shimmer rounded-md bg-[linear-gradient(90deg,var(--muted)_0%,#e7e9f1_50%,var(--muted)_100%)] bg-[length:200%_100%]",
+      "animate-shimmer rounded-md bg-[linear-gradient(90deg,var(--muted)_0%,#e9e9ec_50%,var(--muted)_100%)] bg-[length:200%_100%]",
       className,
     )}
   />
@@ -18,7 +18,7 @@ export const Skeleton = ({ className }: { className?: string }) => (
 const badgeTones = {
   default: "bg-accent text-accent-foreground",
   neutral: "bg-secondary text-secondary-foreground",
-  success: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15",
+  success: "bg-green-50 text-green-700 ring-1 ring-green-600/15",
   warning: "bg-amber-50 text-amber-800 ring-1 ring-amber-600/20",
   danger: "bg-red-50 text-red-700 ring-1 ring-red-600/15",
   outline: "text-foreground ring-1 ring-border bg-card",
@@ -56,7 +56,7 @@ export const PageHeader = ({
   <header className="animate-fade-up flex flex-wrap items-end justify-between gap-4">
     <div className="min-w-0 space-y-1">
       {eyebrow && (
-        <p className="text-primary text-xs font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {eyebrow}
         </p>
       )}
@@ -84,7 +84,7 @@ export const EmptyState = ({
   children?: React.ReactNode;
 }) => (
   <div className="bg-card animate-fade-in flex flex-col items-center rounded-xl border border-dashed px-6 py-14 text-center">
-    <div className="bg-accent text-primary mb-4 grid h-12 w-12 place-items-center rounded-xl">
+    <div className="bg-secondary text-foreground mb-4 grid h-12 w-12 place-items-center rounded-xl border">
       {icon}
     </div>
     <p className="font-semibold">{title}</p>

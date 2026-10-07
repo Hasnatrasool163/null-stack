@@ -186,7 +186,10 @@ async function selectTasks(
 }
 
 /** Tasks of one project that this user may see. */
-export function getTasks(user: SessionUser, projectId: string): Promise<Task[]> {
+export function getTasks(
+  user: SessionUser,
+  projectId: string,
+): Promise<Task[]> {
   return selectTasks(user, "t.project_id = $2", [projectId]);
 }
 
@@ -235,7 +238,13 @@ export type UpdateOutcome =
   | { ok: true; task: BoardTask }
   | { ok: false; status: 400 | 403 | 404; message: string };
 
-const EDIT_ONLY = ["title", "description", "assigneeId", "deadline", "estimatedHours"] as const;
+const EDIT_ONLY = [
+  "title",
+  "description",
+  "assigneeId",
+  "deadline",
+  "estimatedHours",
+] as const;
 
 /** Static column for each patchable field (values are always bound parameters). */
 const COLUMN: Record<keyof z.infer<typeof TaskPatch>, string> = {
@@ -275,7 +284,11 @@ export async function updateTask(
       [patch.assigneeId],
     );
     if (u?.role !== "AGENT") {
-      return { ok: false, status: 400, message: "Tasks can only be assigned to a developer." };
+      return {
+        ok: false,
+        status: 400,
+        message: "Tasks can only be assigned to a developer.",
+      };
     }
   }
 
@@ -291,7 +304,10 @@ export async function updateTask(
   values.push(user.id);
   sets.push(`updated_by = $${values.length}`, "updated_at = now()");
   values.push(id);
-  await query(`UPDATE tasks SET ${sets.join(", ")} WHERE id = $${values.length}`, values);
+  await query(
+    `UPDATE tasks SET ${sets.join(", ")} WHERE id = $${values.length}`,
+    values,
+  );
 
   const updated = await getTaskById(user, id);
   return updated
@@ -376,7 +392,10 @@ type MeetingRow = {
 };
 
 /** Saved transcript analyses: admins see all, managers see meetings that created their projects. */
-export async function getMeetings(user: SessionUser, limit = 10): Promise<Meeting[]> {
+export async function getMeetings(
+  user: SessionUser,
+  limit = 10,
+): Promise<Meeting[]> {
   if (user.role === "AGENT") return [];
   const where =
     user.role === "ADMIN"

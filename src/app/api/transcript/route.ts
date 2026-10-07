@@ -23,7 +23,9 @@ export async function POST(req: Request) {
       { status: 403 },
     );
   }
-  const parsed = TranscriptRequest.safeParse(await req.json().catch(() => null));
+  const parsed = TranscriptRequest.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -31,7 +33,8 @@ export async function POST(req: Request) {
         errors: [
           {
             where: "Transcript",
-            message: "The transcript is missing or too long (max 30,000 characters).",
+            message:
+              "The transcript is missing or too long (max 30,000 characters).",
           },
         ],
       },

@@ -14,7 +14,12 @@ import type {
 } from "@/lib/types";
 
 export type CreateOutcome =
-  | { ok: true; projects: CreatedProject[]; insights: MeetingInsights; meetingId: string }
+  | {
+      ok: true;
+      projects: CreatedProject[];
+      insights: MeetingInsights;
+      meetingId: string;
+    }
   | {
       ok: false;
       status: 400 | 403 | 409 | 422 | 502;
@@ -29,7 +34,12 @@ const fail = (
   status: 400 | 403 | 409 | 422 | 502,
   where: string,
   message: string,
-): CreateOutcome => ({ ok: false, status, reason: "ERROR", errors: [{ where, message }] });
+): CreateOutcome => ({
+  ok: false,
+  status,
+  reason: "ERROR",
+  errors: [{ where, message }],
+});
 
 function toInsights(draft: Draft): MeetingInsights {
   const m = draft.meeting;
@@ -229,14 +239,23 @@ async function saveDraft(
   });
 }
 
-const AI_OPTIONS = { temperature: 0, maxTokens: 6000, timeoutMs: 40_000, cache: false };
+const AI_OPTIONS = {
+  temperature: 0,
+  maxTokens: 6000,
+  timeoutMs: 40_000,
+  cache: false,
+};
 
 export async function createFromTranscript(
   user: SessionUser,
   transcript: string,
 ): Promise<CreateOutcome> {
   if (user.role !== "ADMIN") {
-    return fail(403, "Access", "Only admins can create projects from a transcript.");
+    return fail(
+      403,
+      "Access",
+      "Only admins can create projects from a transcript.",
+    );
   }
   if (!transcript.trim()) {
     return fail(400, "Transcript", "Paste a meeting transcript first.");
@@ -249,7 +268,11 @@ export async function createFromTranscript(
     );
   }
   if (globalForLock.__creating) {
-    return fail(409, "Busy", "A creation is already running. Please wait for it to finish.");
+    return fail(
+      409,
+      "Busy",
+      "A creation is already running. Please wait for it to finish.",
+    );
   }
   globalForLock.__creating = true;
   try {
@@ -258,7 +281,10 @@ export async function createFromTranscript(
     const names = new Map(directory.map((u) => [u.id, u.name]));
     const messages: ChatMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserPrompt(directory, todayYmd(), transcript) },
+      {
+        role: "user",
+        content: buildUserPrompt(directory, todayYmd(), transcript),
+      },
     ];
 
     let draft: Draft;
@@ -284,7 +310,9 @@ export async function createFromTranscript(
       errors = validateDraft(draft, roles);
       if (errors.length > 0) {
         // One automatic repair attempt: feed the validation errors back once.
-        const issues = errors.map((e) => `- ${e.where}: ${e.message}`).join("\n");
+        const issues = errors
+          .map((e) => `- ${e.where}: ${e.message}`)
+          .join("\n");
         draft = await structured(
           Draft,
           [

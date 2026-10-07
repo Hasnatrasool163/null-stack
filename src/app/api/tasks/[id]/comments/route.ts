@@ -14,7 +14,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   }
   const { id } = await ctx.params;
   const comments = await getComments(user, id);
-  if (!comments) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!comments)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ comments });
 }
 
@@ -32,6 +33,7 @@ export async function POST(req: Request, ctx: Ctx) {
   }
   const { id } = await ctx.params;
   const comment = await addComment(user, id, parsed.data.body);
-  if (!comment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!comment)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ comment }, { status: 201 });
 }

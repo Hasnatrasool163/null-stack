@@ -26,12 +26,12 @@ export function MobileNav({
         <Menu className="h-5 w-5" aria-hidden />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-[2px]" />
-        <Dialog.Content className="bg-sidebar data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left fixed inset-y-0 left-0 z-50 flex w-[18rem] max-w-[85vw] flex-col p-4 shadow-2xl duration-300">
+        <Dialog.Overlay className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" />
+        <Dialog.Content className="bg-sidebar data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left fixed inset-y-0 left-0 z-50 flex w-[18rem] max-w-[85vw] flex-col border-r p-4 shadow-2xl duration-300">
           <div className="flex items-center justify-between pb-6">
             {brand}
             <Dialog.Close
-              className="text-sidebar-foreground hover:bg-sidebar-accent focus-visible:ring-primary grid h-11 w-11 cursor-pointer place-items-center rounded-lg focus-visible:ring-2 focus-visible:outline-none"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring grid h-11 w-11 cursor-pointer place-items-center rounded-lg focus-visible:ring-2 focus-visible:outline-none"
               aria-label="Close menu"
             >
               <X className="h-5 w-5" aria-hidden />
@@ -39,7 +39,7 @@ export function MobileNav({
           </div>
           <Dialog.Title className="sr-only">Navigation</Dialog.Title>
           <Dialog.Description className="sr-only">
-            Main pages of NovaWorks CRM
+            Main pages of NullToPlan
           </Dialog.Description>
           <nav aria-label="Main" className="flex-1">
             <NavLinks role={role} onNavigate={() => setOpen(false)} />

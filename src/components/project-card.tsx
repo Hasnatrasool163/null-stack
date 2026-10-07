@@ -5,7 +5,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { formatDate, formatHours } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
-export type ProjectSummary = Project & { hours: number; assignees: string[] };
+export type ProjectSummary = Project & {
+  hours: number;
+  done: number;
+  assignees: string[];
+};
 
 export function ProjectCard({
   project,
@@ -18,7 +22,7 @@ export function ProjectCard({
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group bg-card shadow-card hover:shadow-lift focus-visible:ring-ring relative flex h-full cursor-pointer flex-col rounded-xl border p-5 transition-[box-shadow,border-color,transform] duration-300 ease-soft hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:ring-2 focus-visible:outline-none"
+      className="group bg-card shadow-card hover:shadow-lift focus-visible:ring-ring ease-soft relative flex h-full cursor-pointer flex-col rounded-xl border p-5 transition-[box-shadow,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-zinc-300 focus-visible:ring-2 focus-visible:outline-none"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -30,7 +34,7 @@ export function ProjectCard({
           </h3>
         </div>
         <ArrowUpRight
-          className="text-muted-foreground group-hover:text-primary h-5 w-5 shrink-0 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          className="text-muted-foreground group-hover:text-foreground h-5 w-5 shrink-0 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
           aria-hidden
         />
       </div>
@@ -44,7 +48,7 @@ export function ProjectCard({
           <ListChecks className="text-muted-foreground h-4 w-4" aria-hidden />
           <dt className="sr-only">Tasks</dt>
           <dd>
-            {project.taskCount} {project.taskCount === 1 ? "task" : "tasks"}
+            {project.done}/{project.taskCount} done
           </dd>
         </div>
         <div className="flex items-center gap-2">
@@ -69,7 +73,9 @@ export function ProjectCard({
             <span className="text-muted-foreground block text-[11px] leading-none">
               Manager
             </span>
-            <span className="block truncate font-medium">{project.managerName}</span>
+            <span className="block truncate font-medium">
+              {project.managerName}
+            </span>
           </span>
         </div>
         {shown.length > 0 && (
@@ -82,7 +88,7 @@ export function ProjectCard({
               <Avatar key={n} name={n} size="sm" />
             ))}
             {project.assignees.length > shown.length && (
-              <span className="bg-secondary text-muted-foreground grid h-7 w-7 place-items-center rounded-full text-[11px] font-semibold ring-2 ring-white">
+              <span className="bg-secondary text-muted-foreground ring-card grid h-7 w-7 place-items-center rounded-full text-[11px] font-semibold ring-2">
                 +{project.assignees.length - shown.length}
               </span>
             )}

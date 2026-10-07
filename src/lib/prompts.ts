@@ -36,6 +36,10 @@ STEP 3: MEETING INSIGHTS (always)
 - openQuestions: questions raised but not answered, as short questions.
 - agenda: 3-8 suggested items for the NEXT meeting, most important first. Base them only on the transcript: unanswered questions (OPEN_QUESTION), required details still missing (UNRESOLVED), things someone promised to check or confirm (FOLLOW_UP), risks, blockers or tight deadlines (RISK), choices that were postponed (DECISION). "reason" says in one sentence why it needs discussion. suggestedOwner is a person's name from the transcript or null.`;
 
-export function buildUserPrompt(directory: unknown, today: string, transcript: string): string {
+export function buildUserPrompt(
+  directory: unknown,
+  today: string,
+  transcript: string,
+): string {
   return `TEAM DIRECTORY (JSON):\n${JSON.stringify(directory)}\n\nTODAY: ${today}\n\nTRANSCRIPT:\n${transcript}`;
 }

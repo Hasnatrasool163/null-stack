@@ -2,7 +2,13 @@ import { STATUS_META } from "@/lib/task-meta";
 import type { TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function StatusBadge({ status, className }: { status: TaskStatus; className?: string }) {
+export function StatusBadge({
+  status,
+  className,
+}: {
+  status: TaskStatus;
+  className?: string;
+}) {
   const m = STATUS_META[status];
   return (
     <span

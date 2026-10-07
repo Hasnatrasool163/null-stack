@@ -33,7 +33,10 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const result = await updateTask(user, id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.message }, { status: result.status });
+    return NextResponse.json(
+      { error: result.message },
+      { status: result.status },
+    );
   }
   return NextResponse.json({ task: result.task });
 }

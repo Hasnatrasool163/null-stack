@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FolderKanban,
+  KanbanSquare,
   ListTodo,
   Sparkles,
   Users,
@@ -22,7 +23,13 @@ function items(role: Role): NavItem[] {
       icon: FolderKanban,
       show: true,
     },
-    { href: "/my-tasks", label: "My Tasks", icon: ListTodo, show: role === "AGENT" },
+    {
+      href: "/my-tasks",
+      label: "My Tasks",
+      icon: ListTodo,
+      show: role === "AGENT",
+    },
+    { href: "/board", label: "Board", icon: KanbanSquare, show: true },
     { href: "/team", label: "Team", icon: Users, show: true },
     {
       href: "/admin/transcript",
@@ -53,23 +60,25 @@ export function NavLinks({
               aria-current={active ? "page" : undefined}
               className={cn(
                 "group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-200",
-                "focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none",
+                "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
                 active
-                  ? "bg-sidebar-accent text-white"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white",
+                  ? "bg-sidebar-accent text-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
               )}
             >
               <span
                 aria-hidden
                 className={cn(
-                  "bg-primary absolute inset-y-2 left-0 w-1 origin-center rounded-r-full transition-transform duration-300 ease-soft",
+                  "bg-foreground ease-soft absolute inset-y-2.5 left-0 w-[3px] origin-center rounded-r-full transition-transform duration-300",
                   active ? "scale-y-100" : "scale-y-0",
                 )}
               />
               <Icon
                 className={cn(
                   "h-[18px] w-[18px] transition-colors",
-                  active ? "text-indigo-300" : "text-sidebar-muted group-hover:text-indigo-300",
+                  active
+                    ? "text-foreground"
+                    : "text-sidebar-muted group-hover:text-foreground",
                 )}
                 aria-hidden
               />

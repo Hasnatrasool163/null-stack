@@ -27,7 +27,13 @@ export const DraftProject = z.object({
   deadline: z.string().nullable(),
   tasks: z.array(DraftTask),
 });
-const AGENDA_KINDS = ["OPEN_QUESTION", "UNRESOLVED", "FOLLOW_UP", "RISK", "DECISION"] as const;
+const AGENDA_KINDS = [
+  "OPEN_QUESTION",
+  "UNRESOLVED",
+  "FOLLOW_UP",
+  "RISK",
+  "DECISION",
+] as const;
 
 export const DraftAgendaItem = z.object({
   topic: z.string(),
@@ -61,7 +67,12 @@ export const Draft = z.object({
 export type Draft = z.infer<typeof Draft>;
 
 // ---- Kanban ----
-export const TaskStatusSchema = z.enum(["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"]);
+export const TaskStatusSchema = z.enum([
+  "TODO",
+  "IN_PROGRESS",
+  "IN_REVIEW",
+  "DONE",
+]);
 
 export const TaskLinkSchema = z.object({
   label: z.string().trim().min(1).max(80),

@@ -29,7 +29,12 @@ export type Project = {
   taskCount: number;
 };
 
-export const TASK_STATUSES = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"] as const;
+export const TASK_STATUSES = [
+  "TODO",
+  "IN_PROGRESS",
+  "IN_REVIEW",
+  "DONE",
+] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export type TaskLink = { label: string; url: string };
@@ -105,7 +110,8 @@ export type CreatedProject = {
   tasks: CreatedTask[];
 };
 
-export type AgendaKind = "OPEN_QUESTION" | "UNRESOLVED" | "FOLLOW_UP" | "RISK" | "DECISION";
+export type AgendaKind =
+  "OPEN_QUESTION" | "UNRESOLVED" | "FOLLOW_UP" | "RISK" | "DECISION";
 
 export type AgendaItem = {
   topic: string;
@@ -132,7 +138,12 @@ export type Meeting = MeetingInsights & {
 };
 
 export type TranscriptResult =
-  | { ok: true; projects: CreatedProject[]; insights: MeetingInsights; meetingId: string }
+  | {
+      ok: true;
+      projects: CreatedProject[];
+      insights: MeetingInsights;
+      meetingId: string;
+    }
   | {
       ok: false;
       reason: "NOT_RELEVANT" | "INVALID" | "ERROR";

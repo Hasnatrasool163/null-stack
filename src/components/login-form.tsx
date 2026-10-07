@@ -28,7 +28,10 @@ export function LoginForm() {
           password: form.get("password"),
         }),
       });
-      const data = (await res.json()) as { redirectTo?: string; error?: string };
+      const data = (await res.json()) as {
+        redirectTo?: string;
+        error?: string;
+      };
       if (res.ok && data.redirectTo) {
         router.push(data.redirectTo);
         router.refresh();
@@ -78,7 +81,11 @@ export function LoginForm() {
             aria-label={show ? "Hide password" : "Show password"}
             aria-pressed={show}
           >
-            {show ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+            {show ? (
+              <EyeOff className="h-4 w-4" aria-hidden />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden />
+            )}
           </button>
         </div>
       </div>
@@ -92,7 +99,12 @@ export function LoginForm() {
           {error}
         </p>
       )}
-      <Button type="submit" size="lg" className="group w-full" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="group w-full"
+        disabled={pending}
+      >
         {pending ? (
           <>
             <Spinner /> Signing in...
@@ -100,7 +112,10 @@ export function LoginForm() {
         ) : (
           <>
             Sign in
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden
+            />
           </>
         )}
       </Button>

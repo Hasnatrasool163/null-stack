@@ -7,7 +7,28 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/misc";
 import { Input } from "@/components/ui/input";
 
-/** Project cards with an instant client-side filter (name, client, manager). */
+type SortKey = "deadline" | "name" | "tasks" | "hours";
+
+const SORTS: Record<
+  SortKey,
+  { label: string; compare: (a: ProjectSummary, b: ProjectSummary) => number }
+> = {
+  deadline: {
+    label: "Deadline (soonest)",
+    compare: (a, b) => a.deadline.localeCompare(b.deadline),
+  },
+  name: {
+    label: "Name (A-Z)",
+    compare: (a, b) => a.name.localeCompare(b.name),
+  },
+  tasks: { label: "Most tasks", compare: (a, b) => b.taskCount - a.taskCount },
+  hours: { label: "Most hours", compare: (a, b) => b.hours - a.hours },
+};
+
+const selectCls =
+  "border-input bg-card h-10 cursor-pointer rounded-lg border px-3 text-sm shadow-xs transition-colors hover:border-zinc-400 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
+
+/** Project cards with instant client-side search, manager filter and sorting. */
 export function ProjectGrid({
   projects,
   today,
@@ -16,50 +37,114 @@ export function ProjectGrid({
   today: string;
 }) {
   const [q, setQ] = useState("");
+  const [manager, setManager] = useState("");
+  const [sort, setSort] = useState<SortKey>("deadline");
+  const managers = useMemo(
+    () => [...new Set(projects.map((p) => p.managerName))].sort(),
+    [projects],
+  );
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return projects;
-    return projects.filter((p) =>
-      [p.name, p.clientName, p.managerName].some((v) =>
-        v.toLowerCase().includes(needle),
-      ),
-    );
-  }, [projects, q]);
+    return projects
+      .filter(
+        (p) =>
+          (!manager || p.managerName === manager) &&
+          (!needle ||
+            [p.name, p.clientName, p.managerName].some((v) =>
+              v.toLowerCase().includes(needle),
+            )),
+      )
+      .sort(SORTS[sort].compare);
+  }, [projects, q, manager, sort]);
+  const filtered = q || manager;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="projects-heading" className="text-lg font-semibold tracking-tight">
+        <h2
+          id="projects-heading"
+          className="text-lg font-semibold tracking-tight"
+        >
           Projects{" "}
-          <span className="text-muted-foreground font-normal">({projects.length})</span>
+          <span className="text-muted-foreground font-normal">
+            ({projects.length})
+          </span>
         </h2>
         {projects.length > 1 && (
-          <div className="relative w-full sm:w-64">
-            <Search
-              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-              aria-hidden
-            />
-            <label htmlFor="project-search" className="sr-only">
-              Search projects
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="relative w-full sm:w-56">
+              <Search
+                className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+                aria-hidden
+              />
+              <label htmlFor="project-search" className="sr-only">
+                Search projects
+              </label>
+              <Input
+                id="project-search"
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search projects, clients..."
+                className="h-10 pl-9"
+              />
+            </div>
+            {managers.length > 1 && (
+              <>
+                <label htmlFor="project-manager" className="sr-only">
+                  Filter by manager
+                </label>
+                <select
+                  id="project-manager"
+                  value={manager}
+                  onChange={(e) => setManager(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">All managers</option>
+                  {managers.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+            <label htmlFor="project-sort" className="sr-only">
+              Sort projects
             </label>
-            <Input
-              id="project-search"
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search projects, clients..."
-              className="h-10 pl-9"
-            />
+            <select
+              id="project-sort"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className={selectCls}
+            >
+              {(Object.keys(SORTS) as SortKey[]).map((k) => (
+                <option key={k} value={k}>
+                  {SORTS[k].label}
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>
       <p className="sr-only" role="status">
-        {q ? `${shown.length} of ${projects.length} projects shown` : ""}
+        {filtered ? `${shown.length} of ${projects.length} projects shown` : ""}
       </p>
       {shown.length === 0 ? (
-        <EmptyState icon={<SearchX className="h-5 w-5" aria-hidden />} title="No matching projects">
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => setQ("")}>
-            Clear search
+        <EmptyState
+          icon={<SearchX className="h-5 w-5" aria-hidden />}
+          title="No matching projects"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              setQ("");
+              setManager("");
+            }}
+          >
+            Clear filters
           </Button>
         </EmptyState>
       ) : (
