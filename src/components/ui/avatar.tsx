@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 
-// Neutral greys: enough variation to tell people apart without adding colour.
+// Palette tints (teal, mint, terracotta, slate, ink) so people are easy to tell apart.
 const TONES = [
-  "bg-zinc-200 text-zinc-800",
-  "bg-stone-200 text-stone-800",
-  "bg-neutral-300 text-neutral-800",
-  "bg-zinc-800 text-zinc-50",
-  "bg-stone-100 text-stone-700 ring-stone-300",
+  "bg-primary text-primary-foreground",
+  "bg-accent text-accent-foreground",
+  "bg-tertiary-soft text-tertiary",
+  "bg-secondary text-secondary-foreground",
+  "bg-inverted text-inverted-foreground",
+  "bg-tertiary text-tertiary-foreground",
 ];
 
 function initials(name: string): string {
