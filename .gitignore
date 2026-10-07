@@ -43,3 +43,6 @@ next-env.d.ts
 
 # claude code (local skills/settings)
 .claude/
+
+# internal notes, not committed
+docs/DECISIONS.md
