@@ -1,20 +1,24 @@
 "use client";
 
+import { RotateCcw, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ErrorPage({ retry }: { retry: () => void }) {
   return (
-    <Card role="alert" className="mx-auto max-w-md">
-      <CardHeader>
-        <CardTitle>Something went wrong</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-muted-foreground text-sm">
-          We could not load this page. Please try again.
-        </p>
-        <Button onClick={() => retry()}>Try again</Button>
-      </CardContent>
-    </Card>
+    <div
+      role="alert"
+      className="bg-card shadow-card animate-fade-up mx-auto mt-10 flex max-w-md flex-col items-center rounded-xl border px-6 py-12 text-center"
+    >
+      <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-red-50 text-red-600">
+        <TriangleAlert className="h-6 w-6" aria-hidden />
+      </span>
+      <h1 className="text-lg font-semibold">Something went wrong</h1>
+      <p className="text-muted-foreground mt-1 text-sm">
+        We could not load this page. Please try again.
+      </p>
+      <Button className="mt-6" onClick={() => retry()}>
+        <RotateCcw className="h-4 w-4" aria-hidden /> Try again
+      </Button>
+    </div>
   );
 }

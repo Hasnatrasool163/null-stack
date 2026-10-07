@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "design/ui-overhaul",
+    "feature/kanban-ai-insights",
+    "feature/project-task-editing",
+    "main"
+  ],
+  "parent": {
+    "design/ui-overhaul": "main",
+    "feature/kanban-ai-insights": "main",
+    "feature/project-task-editing": "main",
+    "main": null
+  },
+  "order": [
+    "main",
+    "design/ui-overhaul",
+    "feature/kanban-ai-insights",
+    "feature/project-task-editing"
+  ]
+}

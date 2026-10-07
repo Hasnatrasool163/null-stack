@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { redirect } from "next/navigation";
 import { TranscriptForm } from "@/components/transcript-form";
+import { PageHeader } from "@/components/ui/misc";
 import { requireUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Create from Transcript | NovaWorks" };
@@ -23,14 +24,12 @@ export default async function TranscriptPage() {
   if (user.role !== "ADMIN") redirect("/projects");
   const sample = await loadSample();
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Create from Transcript</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Paste a meeting transcript. The AI turns it into projects and tasks
-          with managers, developers, deadlines and estimated hours.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="AI automation"
+        title="Create from Transcript"
+        description="Paste a meeting transcript. The AI turns it into projects and tasks with managers, developers, deadlines and estimated hours."
+      />
       <TranscriptForm sample={sample} />
     </div>
   );
